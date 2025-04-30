@@ -1,0 +1,190 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ❌ Elimina o comenta esta sección para evitar que cambie con el sistema */
+/* @media (prefers-color-scheme: dark) { 
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+} */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.custom-table {
+  background-color: #ffffff;
+  font-size: 16px;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.custom-table th,
+.custom-table td {
+  text-align: center;
+  padding: 0px 15px; /* Reduce el padding vertical (primero el valor) */
+  box-sizing: border-box;
+  border: 1px solid #d8d8d8;
+  white-space: nowrap;
+  height: 10px; /* Define una altura fija para las celdas */
+}
+
+.custom-table th {
+  color: #ffffff;
+  font-weight: normal;
+  background-color: #8f8f8f;
+  border-bottom: 2px solid #d8d8d8;
+  position: sticky;
+  top: 0;
+}
+
+.custom-table tbody tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.custom-table tbody tr:hover {
+  background-color: #e6e6e6;
+}
+
+button {
+  font-family: inherit;
+  font-size: 20px;
+  background: #212121;
+  color: white;
+  fill: rgb(155, 153, 153);
+  padding: 0.7em 1em;
+  padding-left: 0.9em;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  border: none;
+  border-radius: 15px;
+  font-weight: 1000;
+  margin-top: 20px;
+}
+
+button span {
+  display: block;
+  margin-left: 0.3em;
+  transition: all 0.3s ease-in-out;
+}
+
+button svg {
+  display: block;
+  transform-origin: center center;
+  transition: transform 0.3s ease-in-out;
+}
+
+button:hover {
+  background: #000;
+}
+
+button:hover .svg-wrapper {
+  transform: scale(1.25);
+  transition: 0.5s linear;
+}
+
+button:hover svg {
+  transform: translateX(1.2em) scale(1.1);
+  fill: #fff;
+}
+
+button:hover span {
+  opacity: 0;
+  transition: 0.5s linear;
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+.checkbox-label {
+  font-size: 10px;
+  color: #ffffff;
+  padding: 10px 50px 10px 5px;
+  font-family: Arial, Helvetica, sans-serif;
+  user-select: none;
+  position: relative;
+  align-items: center;
+  transition: all 0.3s;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.checkbox {
+  width: 35px;
+  height: 35px;
+  cursor: pointer;
+  margin-right: -22px;
+  appearance: none;
+  border-radius: 5px;
+  background-color: #ffffff; /* fondo inicial oscuro */
+  z-index: 2;
+  transition: all 0.3s;
+  border: 2px solid #222222; /* borde blanco */
+}
+
+/* Eliminamos completamente el before */
+.checkbox::before {
+  content: none;
+}
+
+.checkbox:checked {
+  transform: translate(4px, 4px);
+  transition: ease-out 0.15s;
+  background-color: #ffffff;
+  border-color: #000000;
+}
+
+.checkbox:hover {
+  transform: translate(4px, 4px);
+  transition: ease-out 0.15s;
+  background-color: #444444;
+}
+
+/* container ya no tiene color visible, puedes usarlo para fondo neutro */
+.container {
+  width: 35px;
+  height: 35px;
+  position: relative;
+  top: 4px;
+  left: -8%;
+  border-radius: 5px;
+  background-color: transparent;
+  transition: all 0.3s;
+}
+
+.svg-icon {
+  position: absolute;
+  width: 25px;
+  height: 25px;
+  display: flex;
+  z-index: 3;
+  top: 35%;
+  left: 43%;
+  color: #ffffff;
+  font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS", sans-serif;
+  transform: rotate(0deg) scale(0);
+  transition: ease-in 0.2s;
+}
+
+.checkbox:checked ~ .svg-icon {
+  transform: rotate(360deg) scale(1);
+  color: #ffffff;
+  transition: ease-in 0.2s;
+}

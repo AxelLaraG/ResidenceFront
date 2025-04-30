@@ -1,0 +1,32 @@
+# Dependencias
+/node_modules
+/.pnp
+.pnp.js
+
+# Entornos de prueba y desarrollo
+/.next/
+/out/
+/.vercel/
+
+# Cache y archivos temporales
+/.cache
+/.svelte-kit
+/package-lock.json
+/yarn.lock
+/pnpm-lock.yaml
+
+# Variables de entorno
+.env*
+!.env.example
+
+# Logs y reportes
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Sistema operativo
+.DS_Store
+*.log
+.idea/
+.vscode/
+*.swp
