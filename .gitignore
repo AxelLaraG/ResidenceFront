@@ -1,32 +1,36 @@
-# Dependencias
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
 /node_modules
 /.pnp
 .pnp.js
+.yarn/install-state.gz
 
-# Entornos de prueba y desarrollo
+# testing
+/coverage
+
+# next.js
 /.next/
 /out/
-/.vercel/
 
-# Cache y archivos temporales
-/.cache
-/.svelte-kit
-/package-lock.json
-/yarn.lock
-/pnpm-lock.yaml
+# production
+/build
 
-# Variables de entorno
-.env*
-!.env.example
+# misc
+.DS_Store
+*.pem
 
-# Logs y reportes
+# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Sistema operativo
-.DS_Store
-*.log
-.idea/
-.vscode/
-*.swp
+# local env files
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
