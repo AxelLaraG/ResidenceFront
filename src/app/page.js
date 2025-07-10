@@ -1,219 +1,139 @@
 "use client";
 
-import { useState } from "react";
+import { useState,useEffect } from "react";
+import styles from "../styles/login.css";
+import ErrorCard from "../components/ui/ErrorMessage/Error";
 
-export default function XmlUploader() {
-  const [xmlData, setXmlData] = useState(null);
+export default function Login() {
+  const [eMail, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [selectedTag, setSelectedTag] = useState(null);
-  const [selectedItems, setSelectedItems] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
-  };
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(()=> setError(null), 9000);
+      return () => clearTimeout(timer);
+    }
+  },[error])
 
-  const handleDownload = async () => {
-    const response = await fetch("http://127.0.0.1:8000/xml_gen/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(selectedItems), // Enviar solo los datos seleccionados
-    });
+  const handleSubmit = async (e) => {
+    setLoading(true);
+    e.preventDefault();
+    setError(null);
 
-    const xmlData = await response.text();
-    const blob = new Blob([xmlData], { type: "application/xml" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "datos.xml";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile) return;
-
-    const formData = new FormData();
-    formData.append("documento_xml", selectedFile);
-
-    try {
-      const response = await fetch("http://127.0.0.1:8000/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.valido) {
-        setError(null);
-        setXmlData(result.data); // El JSON retornado es asignado aquí
-      } else {
-        setError(`Error en validación: ${result.detail}`);
-        setXmlData(null);
-      }
-    } catch (err) {
-      setError("Error al conectar con el servidor");
-      setXmlData(null);
+    if (!eMail || !password) {
+      setError("Campos incompletos");
+      setLoading(false);
+      return;
     }
   };
 
-  // Filtra los atributos como @attributes y retorna las claves del objeto
-  const filterAttributes = (obj) => {
-    if (!obj || typeof obj !== "object") return obj;
-
-    return Object.keys(obj)
-      .filter((key) => !key.startsWith("@")) // Filtra claves que comienzan con '@' (atributos XML)
-      .reduce((acc, key) => {
-        acc[key] = obj[key];
-        return acc;
-      }, {});
-  };
-
-  // Función para manejar la selección de una etiqueta principal (sección)
-  const handleTagClick = (tag) => {
-    setSelectedTag(tag);
-  };
-
-  // Función que extrae las etiquetas dentro de la clave "cvu"
-  const getMainTags = (data) => {
-    if (!data || !data.cvu) return []; // Asegura que haya un objeto "cvu"
-    return Object.keys(data.cvu).filter((key) => key !== "xmlns:xsi"); // Filtra atributos no deseados
-  };
-
-  const handleSelected = (event) => {
-    const checkbox = event.target;
-    const row = checkbox.closest("tr");
-    const cells = row.querySelectorAll("td");
-    const selectedData = Array.from(cells).map((cell) => cell.innerText);
-    const clave = selectedData[0];
-    const valor = selectedData[1];
-
-    setSelectedItems((prev) => {
-      const updatedItems = { ...prev };
-
-      if (clave in updatedItems) {
-        delete updatedItems[clave];
-      } else {
-        updatedItems[clave] = valor;
-      }
-
-      return updatedItems;
-    });
-  };
-
   return (
-    <div className="flex">
-      {/* Barra lateral */}
-      <div className="w-1/4 p-4 border-r border-gray-300">
-        <h2 className="font-semibold text-xl mb-4">Secciones del CVU</h2>
-        <div className="space-y-2">
-          {xmlData && getMainTags(xmlData).length > 0 ? (
-            getMainTags(xmlData).map((key) => (
-              <button
-                key={key}
-                className="w-full text-left p-2 bg-gray-200 rounded"
-                onClick={() => handleTagClick(key)}
-              >
-                <span>{key}</span>
-              </button>
-            ))
-          ) : (
-            <p>No se encontraron secciones.</p>
-          )}
-        </div>
-      </div>
-
-      {/* Contenido principal */}
-      <div className="flex-1 p-4">
-        <input
-          type="file"
-          accept=".xml"
-          onChange={handleFileChange}
-          className="mb-4"
-        />
-
-        <button
-          onClick={handleUpload}
-          className="px-4 py-2 bg-blue-500 text-white rounded mb-4"
+    <div className="center-container">
+      {error && (
+        <div
+          style={{
+            position: "absolute",
+            top: 30,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 1000,
+          }}
         >
-          Validar XML
-        </button>
+          <ErrorCard
+            message={error}
+            subMessage="Por favor llene rodos los campos"
+            onClose={() => setError(null)}
+          />
+        </div>
+      )}
+      <form className="form">
+        <div className="icon-circle bg-green-800 mb-4">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-8 w-8 text-white"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+        </div>
 
-        {error && <p className="text-red-500">{error}</p>}
-
-        {selectedTag && xmlData && (
-          <div>
-            <h3 className="text-xl font-semibold mb-4">{selectedTag}</h3>
-            {xmlData.cvu[selectedTag] ? (
-              <table className="custom-table" id="data-table">
-                <thead>
-                  <tr>
-                    <th>Campo</th>
-                    <th>Valor</th>
-                    <th>Selección</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(
-                    filterAttributes(xmlData.cvu[selectedTag])
-                  ).map(([key, value]) => (
-                    <tr key={key}>
-                      <td>{key}</td>
-                      <td>{value}</td>
-                      <td>
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            className="checkbox"
-                            onClick={handleSelected}
-                            checked={
-                              selectedItems && selectedItems[key] !== undefined
-                            }
-                            readOnly
-                          />
-                          <div className="svg-icon">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              height="1em"
-                              viewBox="0 0 448 512"
-                            >
-                              <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"></path>
-                            </svg>
-                          </div>
-                          <span className="container"></span>
-                        </label>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p>No hay datos disponibles para esta sección.</p>
-            )}
+        <div className="title_container">
+          <p className="title">Portal de Datos CVU</p>
+          <span className="subtitle">
+            Use su cuenta de Rizoma SECIHTI para iniciar sesión
+          </span>
+        </div>
+        <div className="flex-column">
+          <label>Email</label>
+          <div
+            className={`inputForm${error && !eMail ? " inputForm-error" : ""}`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              viewBox="0 0 32 32"
+              height="20"
+            >
+              <g data-name="Layer 3" id="Layer_3">
+                <path d="m30.853 13.87a15 15 0 0 0 -29.729 4.082 15.1 15.1 0 0 0 12.876 12.918 15.6 15.6 0 0 0 2.016.13 14.85 14.85 0 0 0 7.715-2.145 1 1 0 1 0 -1.031-1.711 13.007 13.007 0 1 1 5.458-6.529 2.149 2.149 0 0 1 -4.158-.759v-10.856a1 1 0 0 0 -2 0v1.726a8 8 0 1 0 .2 10.325 4.135 4.135 0 0 0 7.83.274 15.2 15.2 0 0 0 .823-7.455zm-14.853 8.13a6 6 0 1 1 6-6 6.006 6.006 0 0 1 -6 6z"></path>
+              </g>
+            </svg>
+            <input
+              placeholder="Ingresa tu correo"
+              className="input"
+              type="text"
+              value={eMail}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
-        )}
 
-        {selectedItems && Object.keys(selectedItems).length > 0 && (
-          <button onClick={handleDownload} className="button-save">
-            <div className="svg-wrapper-1">
-              <div className="svg-wrapper">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  width="30"
-                  height="30"
-                  className="icon"
-                >
-                  <path d="M22,15.04C22,17.23 20.24,19 18.07,19H5.93C3.76,19 2,17.23 2,15.04C2,13.07 3.43,11.44 5.31,11.14C5.28,11 5.27,10.86 5.27,10.71C5.27,9.33 6.38,8.2 7.76,8.2C8.37,8.2 8.94,8.43 9.37,8.8C10.14,7.05 11.13,5.44 13.91,5.44C17.28,5.44 18.87,8.06 18.87,10.83C18.87,10.94 18.87,11.06 18.86,11.17C20.65,11.54 22,13.13 22,15.04Z"></path>
-                </svg>
-              </div>
+          <div className="flex-column">
+            <label>Contraseña</label>
+            <div
+              className={`inputForm${
+                error && !password ? " inputForm-error" : ""
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                viewBox="-64 0 512 512"
+                height="20"
+              >
+                <path d="m336 512h-288c-26.453125 0-48-21.523438-48-48v-224c0-26.476562 21.546875-48 48-48h288c26.453125 0 48 21.523438 48 48v224c0 26.476562-21.546875 48-48 48zm-288-288c-8.8125 0-16 7.167969-16 16v224c0 8.832031 7.1875 16 16 16h288c8.8125 0 16-7.167969 16-16v-224c0-8.832031-7.1875-16-16-16zm0 0"></path>
+                <path d="m304 224c-8.832031 0-16-7.167969-16-16v-80c0-52.929688-43.070312-96-96-96s-96 43.070312-96 96v80c0 8.832031-7.167969 16-16 16s-16-7.167969-16-16v-80c0-70.59375 57.40625-128 128-128s128 57.40625 128 128v80c0 8.832031-7.167969 16-16 16zm0 0"></path>
+              </svg>
+              <input
+                placeholder="Ingresa tu contraseña"
+                className="input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
-            <span>Save</span>
-          </button>
-        )}
-      </div>
+          </div>
+
+          <div className="flex-row">
+            <button
+              className="button-submit"
+              type="submit"
+              enabled={(!loading).toString()}
+              onClick={handleSubmit}
+            >
+              Iniciar Sesión
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   );
 }
