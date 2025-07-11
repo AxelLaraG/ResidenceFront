@@ -1,21 +1,24 @@
 "use client";
 
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import styles from "../styles/login.css";
 import ErrorCard from "../components/ui/ErrorMessage/Error";
+import Loader from "@/components/ui/LoadPage/Load";
+import { login } from "@/services/Auth";
 
 export default function Login() {
   const [eMail, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [subError, setSubError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (error) {
-      const timer = setTimeout(()=> setError(null), 9000);
+      const timer = setTimeout(() => setError(null), 9000);
       return () => clearTimeout(timer);
     }
-  },[error])
+  }, [error]);
 
   const handleSubmit = async (e) => {
     setLoading(true);
@@ -24,18 +27,33 @@ export default function Login() {
 
     if (!eMail || !password) {
       setError("Campos incompletos");
+      setSubError("Por favor, llene todos los campos");
       setLoading(false);
       return;
+    }
+
+    try {
+      const userData = await login(eMail, password);
+      console.log("Success");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="center-container">
+      {loading && (
+        <div className="overlay-loader">
+          <Loader />
+        </div>
+      )}
       {error && (
         <div
           style={{
             position: "absolute",
-            top: 30,
+            top: 130,
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 1000,
@@ -43,7 +61,7 @@ export default function Login() {
         >
           <ErrorCard
             message={error}
-            subMessage="Por favor llene rodos los campos"
+            subMessage={subError}
             onClose={() => setError(null)}
           />
         </div>
