@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation" 
 import styles from "../styles/login.css";
 import ErrorCard from "../components/ui/ErrorMessage/Error";
 import Loader from "@/components/ui/LoadPage/Load";
-import { login } from "@/services/Auth";
+import { login } from "@/services/Functions";
 
 export default function Login() {
   const [eMail, setEmail] = useState("");
@@ -12,6 +13,7 @@ export default function Login() {
   const [error, setError] = useState(null);
   const [subError, setSubError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (error) {
@@ -34,10 +36,9 @@ export default function Login() {
 
     try {
       const userData = await login(eMail, password);
-      console.log("Success");
+      router.push("/MainView");
     } catch (e) {
       setError(e.message);
-    } finally {
       setLoading(false);
     }
   };
@@ -53,7 +54,7 @@ export default function Login() {
         <div
           style={{
             position: "absolute",
-            top: 130,
+            top: "5%",
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 1000,
