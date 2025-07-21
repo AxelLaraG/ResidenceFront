@@ -130,6 +130,7 @@ export default function MainView() {
         username={data?.data?.cvu?.MiPerfil.Nombre}
         email={user?.email}
         onLogout={handleLogout}
+        role={user?.role}
       />
 
       {showDeadToken && (
@@ -144,7 +145,7 @@ export default function MainView() {
         </div>
       )}
 
-      
+
     </div>
   );
 }

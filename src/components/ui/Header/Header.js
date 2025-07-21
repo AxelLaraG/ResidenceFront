@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import UserMenu from "../UserMenu/UserMenu";
 
-const Header = ({ username, email, onLogout }) => {
+const Header = ({ username, email, onLogout,role }) => {
   const [showMenu, setShowMenu] = useState(false);
   const avatarMenuRef = useRef(null);
 
@@ -50,7 +50,7 @@ const Header = ({ username, email, onLogout }) => {
             />
             {showMenu && (
               <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-48 z-50">
-                <UserMenu email={email} onLogout={onLogout} />
+                <UserMenu email={email} onLogout={onLogout} role={role}/>
               </div>
             )}
           </div>
