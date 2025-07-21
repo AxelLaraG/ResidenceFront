@@ -26,56 +26,98 @@ export const login = async (email, password) => {
   }
 };
 
-export const logout = async() => {
+export const logout = async () => {
   try {
     const res = await apiClient.post("/logout");
     return res.data;
   } catch (error) {
     throw new Error("Error al cerrar sesión");
   }
-}
+};
 
-export const getCurrentUser = async (token) =>{
+export const getCurrentUser = async (token) => {
   try {
     const res = await apiClient.get("/usuario_actual", {
-      headers: { Authorization: `Bearer ${token}`},
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     return res.data.usuario;
-
   } catch (error) {
     throw new Error("Error al obtener el usuario actual");
   }
-}
+};
 
-export const fetchUserXML = async (username) =>{
+export const fetchUserXML = async (username) => {
   try {
-    const res = await fetch(`http://localhost:8080/SECIHTIServ/${username}.xml`);
+    const res = await fetch(
+      `http://localhost:8080/SECIHTIServ/${username}.xml`
+    );
     if (!res.ok) throw new Error("No se pudo obtener el XML del usuario");
     const xmlText = await res.text();
     return xmlText;
   } catch (error) {
     throw new Error("Error al obtener el XML");
-    
   }
-}
+};
 
 export const validateXML = async (formData) => {
   try {
-    const res = await apiClient.post("/upload", formData,{
-      headers:{
-        "Content-Type": "multipart/form-data"
-      }
+    const res = await apiClient.post("/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
     });
 
     return res.data;
   } catch (error) {
     if (error.response) {
-      throw new Error(error.response.data.detail || "Error al validar el XML")
-    }else{
+      throw new Error(error.response.data.detail || "Error al validar el XML");
+    } else {
       throw new Error("Error al validar el XML");
-      
     }
-
   }
+};
+
+export const getXSD = async () => {
+  try {
+    const res = await fetch(
+      `http://localhost:8080/SECIHTIServ/Rizoma.xsd`
+    );
+    if (!res.ok) throw new Error("No se pudo obtener el XML del usuario");
+    const xmlText = await res.text();
+    return xmlText;
+  } catch (error) {
+    throw new Error("Error al obtener el XSD");
+  }
+};
+
+export function parseXsdToGroupedElements(xsdText) {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(xsdText, "text/xml");
+
+  const grouped = [];
+
+  const complexTypes = xmlDoc.getElementsByTagName("xs:complexType");
+
+  for (let i = 0; i < complexTypes.length; i++) {
+    const complexType = complexTypes[i];
+    const typeName = complexType.getAttribute("name") || `Tipo${i + 1}`;
+
+    const elements = Array.from(
+      complexType.getElementsByTagName("xs:element")
+    ).map((el) => ({
+      name: el.getAttribute("name"),
+      type: el.getAttribute("type"),
+      minOccurs: el.getAttribute("minOccurs") || "1",
+      maxOccurs: el.getAttribute("maxOccurs") || "1",
+    }));
+
+    grouped.push({
+      groupName: typeName,
+      elements,
+    });
+  }
+
+  return grouped;
 }
+

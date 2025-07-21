@@ -4,7 +4,10 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value;
 
   if (request.nextUrl.pathname.startsWith('/MainView') && !token) {
-    console.log("Middleware en acción!")
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  if (request.nextUrl.pathname.startsWith('/EsquemasConf') && !token) {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
@@ -12,5 +15,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/MainView'],
+  matcher: ['/MainView','/EsquemasConf'],
 };

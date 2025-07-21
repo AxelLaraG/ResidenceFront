@@ -8,13 +8,12 @@ import {
 import { useEffect, useRef, useState } from "react";
 import Header from "@/components/ui/Header/Header";
 import { useRouter } from "next/navigation";
-import { logout } from "@/services/Functions";
+import { logout, getXSD, parseXsdToGroupedElements } from "@/services/Functions";
 import ErrorCard from "@/components/ui/ErrorMessage/Error";
 import Loader from "@/components/ui/LoadPage/Load";
 import DeadToken from "@/components/ui/DeadToken/DeadToken";
 
-export default function MainView() {
-  const [data, setData] = useState(null);
+export default function EsquemasConf() {
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -22,6 +21,8 @@ export default function MainView() {
   const [deadTokenReason, setDeadTokenReason] = useState("");
   const [textToken, setTextToken] = useState("");
   const [stayOnline, setStayOnline] = useState(false);
+  const [xsdRaw, setXsdRaw] = useState(null);
+  const [groupedElements, setGroupedElements] = useState([]);
 
   const router = useRouter();
   const inactivityTimeout = useRef(null);
@@ -45,27 +46,20 @@ export default function MainView() {
   }, []);
 
   useEffect(() => {
-    setError(null);
-    const fetchData = async () => {
+    const loadXSD = async () => {
       try {
         const usuario = await getCurrentUser();
         setUser(usuario);
-
-        const username = usuario.email.split("@")[0];
-        const xmlText = await fetchUserXML(username);
-
-        const formData = new FormData();
-        const xmlBlob = new Blob([xmlText], { type: "text/xml" });
-        formData.append("documento_xml", xmlBlob, `${username}.xml`);
-
-        const res = await validateXML(formData);
-        setData(res);
+        const data = await getXSD();
+        setXsdRaw(data);
+        const grouped = parseXsdToGroupedElements(data);
+        setGroupedElements(grouped);
       } catch (error) {
-        console.log("Error en la autenticación o carga de datos");
+        console.log(error)
+        setError("Error al cargar el XSD");
       }
     };
-
-    fetchData();
+    loadXSD();
   }, []);
 
   function resetInactivityTimer() {
@@ -101,10 +95,10 @@ export default function MainView() {
     router.push("/");
   };
 
-  const handleOnChangeView = () =>{
+  const handleOnChangeView = () => {
     setError(null);
     setLoading(true);
-    router.push("/EsquemasConf")
+    router.push("/MainView");
   };
 
   return (
@@ -133,12 +127,12 @@ export default function MainView() {
       )}
 
       <Header
-        username={data?.data?.cvu?.MiPerfil.Nombre}
+        username=""
         email={user?.email}
-        vista="1"
+        vista="2"
         onLogout={handleLogout}
+        onChangeView={handleOnChangeView}
         role={user?.role}
-        onChangeView = {handleOnChangeView}
       />
 
       {showDeadToken && (
@@ -153,10 +147,44 @@ export default function MainView() {
         </div>
       )}
 
-      <div style={{ display: "flex", height: "80vh" }}>
-        <aside style={{ width:220}}>
+      <div className="p-4">
+        <div className="p-4">
+          <h2 className="text-xl font-semibold mb-4">
+            Elementos por tipo complejo
+          </h2>
 
-        </aside>
+          {groupedElements.length === 0 ? (
+            <p>Cargando elementos...</p>
+          ) : (
+            groupedElements.map((group, index) => (
+              <div key={index} className="mb-8">
+                <h3 className="text-lg font-bold mb-2 text-indigo-600">
+                  {group.groupName}
+                </h3>
+                <table className="table-auto border-collapse w-full text-sm">
+                  <thead className="bg-gray-200">
+                    <tr>
+                      <th className="border px-4 py-2">Nombre</th>
+                      <th className="border px-4 py-2">Tipo</th>
+                      <th className="border px-4 py-2">minOccurs</th>
+                      <th className="border px-4 py-2">maxOccurs</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {group.elements.map((el, i) => (
+                      <tr key={i} className="hover:bg-gray-100">
+                        <td className="border px-4 py-2">{el.name}</td>
+                        <td className="border px-4 py-2">{el.type}</td>
+                        <td className="border px-4 py-2">{el.minOccurs}</td>
+                        <td className="border px-4 py-2">{el.maxOccurs}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
