@@ -26,6 +26,15 @@ export const login = async (email, password) => {
   }
 };
 
+export const logout = async() => {
+  try {
+    const res = await apiClient.post("/logout");
+    return res.data;
+  } catch (error) {
+    throw new Error("Error al cerrar sesión");
+  }
+}
+
 export const getCurrentUser = async (token) =>{
   try {
     const res = await apiClient.get("/usuario_actual", {

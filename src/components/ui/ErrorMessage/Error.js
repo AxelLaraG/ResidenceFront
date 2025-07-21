@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 
-const Card = ({ message, subMessage, onClose }) => {
+const ErrorCard = ({ message, subMessage, onClose }) => {
   return (
     <StyledWrapper>
       <div className="card">
@@ -120,4 +120,4 @@ const StyledWrapper = styled.div`
   }
 `;
 
-export default Card;
+export default ErrorCard;

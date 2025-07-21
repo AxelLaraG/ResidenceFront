@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 
-const UserMenu = ({ email }) => {
+const UserMenu = ({ email, onLogout }) => {
   return (
     <div className="max-w-xs w-full bg-white border border-gray-200 rounded-xl overflow-hidden shadow-[0_10px_25px_-5px_rgba(0,0,0,0.05),0_8px_10px_-6px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.08),0_15px_15px_-6px_rgba(0,0,0,0.06)] transition-all duration-300">
       <div className="px-4 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-700 to-blue-600">
@@ -16,6 +16,10 @@ const UserMenu = ({ email }) => {
       <div className="py-1.5">
         <a
           href="#"
+          onClick={(e)=>{
+            e.preventDefault();
+            if (onLogout) onLogout();
+          }}
           className="group relative flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 transition-all duration-200"
         >
           <div className="absolute left-0 top-0 h-full w-1 bg-red-500 rounded-r opacity-0 group-hover:opacity-100 transition-all duration-200 group-hover:scale-y-100 scale-y-80" />
