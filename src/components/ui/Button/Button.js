@@ -1,107 +1,30 @@
-import React from "react";
-import styled from "styled-components";
+import React from 'react';
+import styled from 'styled-components';
 
-const Button = ({ text, onPush }) => {
+const Button = ({text,onClick}) => {
   return (
     <StyledWrapper>
-      <button
-        className="button"
-        onClick={(e) => {
-          e.preventDefault();
-          if (onPush) onPush();
-        }}
-      >
-        <span className="shadow" />
-        <span className="edge" />
-        <div className="front">
-          <span>{text}</span>
-        </div>
-      </button>
+      <button onClick={onClick}>{text}</button>
     </StyledWrapper>
   );
-};
+}
 
 const StyledWrapper = styled.div`
-  .button {
-    position: relative;
-    border: none;
-    background: transparent;
-    padding: 0;
-    outline: none;
+  button {
+    color: #090909;
+    padding: 0.7em 1.7em;
+    font-size: 18px;
+    border-radius: 0.5em;
+    background: #e8e8e8;
     cursor: pointer;
-    font-family: sans-serif;
+    border: 1px solid #e8e8e8;
+    transition: all 0.3s;
+    box-shadow: 6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff;
   }
 
-  /* Shadow layer */
-  .button .shadow {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.25);
-    border-radius: 8px;
-    transform: translateY(2px);
-    transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
-  }
-
-  /* Edge layer */
-  .button .edge {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 8px;
-    background: linear-gradient(
-      to left,
-      hsl(217, 33%, 16%) 0%,
-      hsl(217, 33%, 32%) 8%,
-      hsl(217, 33%, 32%) 92%,
-      hsl(217, 33%, 16%) 100%
-    );
-  }
-
-  /* Front layer */
-  .button .front {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 12px 28px;
-    font-size: 1.25rem;
-    color: white;
-    background: hsl(217, 33%, 17%);
-    border-radius: 8px;
-    transform: translateY(-4px);
-    transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
-  }
-
-  /* Hover and active states */
-  .button:hover .shadow {
-    transform: translateY(4px);
-    transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
-  }
-
-  .button:hover .front {
-    transform: translateY(-6px);
-    transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
-  }
-
-  .button:active .shadow {
-    transform: translateY(1px);
-    transition: transform 34ms;
-  }
-
-  .button:active .front {
-    transform: translateY(-2px);
-    transition: transform 34ms;
-  }
-
-  /* Disable text selection */
-  .button .front span {
-    user-select: none;
-  }
-`;
+  button:active {
+    color: #666;
+    box-shadow: inset 4px 4px 12px #c5c5c5, inset -4px -4px 12px #ffffff;
+  }`;
 
 export default Button;

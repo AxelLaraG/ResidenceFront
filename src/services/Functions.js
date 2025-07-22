@@ -78,46 +78,11 @@ export const validateXML = async (formData) => {
   }
 };
 
-export const getXSD = async () => {
+export const xsdToJson = async () => {
   try {
-    const res = await fetch(
-      `http://localhost:8080/SECIHTIServ/Rizoma.xsd`
-    );
-    if (!res.ok) throw new Error("No se pudo obtener el XML del usuario");
-    const xmlText = await res.text();
-    return xmlText;
+    const res = await apiClient.get("/api/xsd");
+    return res.data;
   } catch (error) {
-    throw new Error("Error al obtener el XSD");
+    throw new Error("Error al convertir XSD a JSON");
   }
-};
-
-export function parseXsdToGroupedElements(xsdText) {
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(xsdText, "text/xml");
-
-  const grouped = [];
-
-  const complexTypes = xmlDoc.getElementsByTagName("xs:complexType");
-
-  for (let i = 0; i < complexTypes.length; i++) {
-    const complexType = complexTypes[i];
-    const typeName = complexType.getAttribute("name") || `Tipo${i + 1}`;
-
-    const elements = Array.from(
-      complexType.getElementsByTagName("xs:element")
-    ).map((el) => ({
-      name: el.getAttribute("name"),
-      type: el.getAttribute("type"),
-      minOccurs: el.getAttribute("minOccurs") || "1",
-      maxOccurs: el.getAttribute("maxOccurs") || "1",
-    }));
-
-    grouped.push({
-      groupName: typeName,
-      elements,
-    });
-  }
-
-  return grouped;
 }
-
