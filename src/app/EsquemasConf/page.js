@@ -1,241 +1,105 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Header from "@/components/ui/Header/Header";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { logout, getCurrentUser, xsdToJson } from "@/services/Functions";
+import { xsdToJson } from "@/services/Functions";
+
+// Components
+import Header from "@/components/ui/Header/Header";
 import ErrorCard from "@/components/ui/ErrorMessage/Error";
 import Loader from "@/components/ui/LoadPage/Load";
 import DeadToken from "@/components/ui/DeadToken/DeadToken";
 import Button from "@/components/ui/Button/Button";
 import TreeView from "@/components/ui/TreeView/TreeView";
-import Checkbox from "@/components/ui/CheckBox/CheckBox";
+import Verification from "@/components/ui/Verification/Verification";
+import SideMenu from "@/components/SideMenu/SideMenu";
+import ElementsTable from "@/components/ElementsTable/ElementsTable";
+import ChangesPanel from "@/components/ChangesPanel/ChangesPanel";
+
+// Custom Hooks
+import { useAuth } from "@/hooks/useAuth";
+import { useElementSelection } from "@/hooks/useElementSelection";
+import { useVerification } from "@/hooks/useVerification";
 
 export default function EsquemasConf() {
   const [error, setError] = useState(null);
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showDeadToken, setShowDeadToken] = useState(false);
-  const [deadTokenReason, setDeadTokenReason] = useState("");
-  const [textToken, setTextToken] = useState("");
-  const [stayOnline, setStayOnline] = useState(false);
   const [dataXSD, setDataXSD] = useState(null);
   const [selectedSection, setSelectedSection] = useState(null);
   const [showTreeView, setShowTreeView] = useState(false);
   const [baseData, setBaseData] = useState(null);
-  const [selectedElements, setSelectedElements] = useState({});
-  const [baseUpdated, setBaseUpdated] = useState(false);
-  const [globalChanges, setGlobalChanges] = useState({ added: [], removed: [] });
+  const [lastActionMessage, setLastActionMessage] = useState(null);
 
   const router = useRouter();
-  const inactivityTimeout = useRef(null);
-  const logoutTimeout = useRef(null);
-  const sessionTimeout = useRef(null);
 
-  useEffect(() => {
-    sessionTimeout.current = setTimeout(() => {
-      setDeadTokenReason("Sesión Expirada");
-      setTextToken("Su sesión ha expirado, por favor inicie sesión de nuevo");
-      setStayOnline(false);
-      setShowDeadToken(true);
-    }, 2 * 60 * 60 * 1000);
+  // Custom hooks
+  const {
+    user,
+    showDeadToken,
+    deadTokenReason,
+    textToken,
+    stayOnline,
+    handleDeadTokenCancel,
+    handleLogout,
+    handleOnChangeView,
+  } = useAuth(router);
 
-    resetInactivityTimer();
+  const {
+    selectedElements,
+    setSelectedElements,
+    globalChanges,
+    setGlobalChanges,
+    getElementUniqueId,
+    isElementInBaseData,
+    isElementSelectedByUniqueId,
+    countElementChildren,
+    countUnselectedChildren,
+    hasGlobalChanges,
+    hasChangesInBaseData,
+    getChangedElements,
+  } = useElementSelection(dataXSD, baseData, selectedSection);
 
-    const events = ["mousemove", "mousedown", "keydown", "touchstart"];
-    events.forEach((e) => {
-      window.addEventListener(e, resetInactivityTimer);
-    });
-  }, []);
+  const {
+    showVerification,
+    verificationData,
+    handleCheckboxChange,
+    handleVerificationAccept,
+    handleVerificationCancel,
+    handleVerificationClose,
+  } = useVerification(
+    dataXSD,
+    selectedElements,
+    setSelectedElements,
+    getElementUniqueId,
+    countElementChildren,
+    countUnselectedChildren,
+    setLastActionMessage,
+    selectedSection
+  );
 
+  // Load XSD data
   useEffect(() => {
     const loadXSD = async () => {
       try {
-        const usuario = await getCurrentUser();
-        setUser(usuario);
-
+        setLoading(true);
+        
         const data = await xsdToJson("rizoma");
         setDataXSD(data);
 
-        const baseData = await xsdToJson("base");
-        setBaseData(baseData);
-        console.log("Base Data:", baseData);
+        const baseDataResult = await xsdToJson("base");
+        setBaseData(baseDataResult);
+        console.log("Base Data:", baseDataResult);
       } catch (error) {
         console.log(error);
         setError("Error al cargar el XSD");
+      } finally {
+        setLoading(false);
       }
     };
     loadXSD();
   }, []);
 
-  function resetInactivityTimer() {
-    clearTimeout(inactivityTimeout.current);
-    if (!showDeadToken) {
-      inactivityTimeout.current = setTimeout(() => {
-        setDeadTokenReason("¿Sigue ahí?");
-        setTextToken(
-          "Lleva 15 minutos inactivo; si no interactúa en 5 minutos, se cerrará la sesión automáticamente por seguridad"
-        );
-        setStayOnline(true);
-        setShowDeadToken(true);
-        // Timer de 5 minutos para logout automático si ignora el aviso
-        logoutTimeout.current = setTimeout(() => {
-          handleLogout();
-        }, 5 * 60 * 1000); // 5 minutos
-      }, 15 * 60 * 1000); // 15 minutos
-    }
-  }
-
-  const getElementsWithChildren = () => {
-    if (!dataXSD) return [];
-
-    const elementsWithChildren = [];
-    const addedElementNames = new Set();
-
-    const exploreElement = (element, parentPath = []) => {
-      if (
-        element.children &&
-        element.children.length > 0 &&
-        !addedElementNames.has(element.name)
-      ) {
-        elementsWithChildren.push({
-          parentSection:
-            parentPath.length > 0 ? parentPath.join(" → ") : "Raíz",
-          elementName: element.name,
-          children: element.children,
-          element: element,
-          depth: parentPath.length,
-          fullPath: [...parentPath, element.name],
-        });
-
-        addedElementNames.add(element.name);
-
-        element.children.forEach((child) => {
-          exploreElement(child, [...parentPath, element.name]);
-        });
-      }
-    };
-
-    Object.keys(dataXSD).forEach((sectionName) => {
-      dataXSD[sectionName].forEach((element) => {
-        exploreElement(element, [sectionName]);
-      });
-    });
-    return elementsWithChildren;
-  };
-
-  const isElementInBaseData = (elementName) => {
-    if (!baseData) return false;
-    return Object.values(baseData).some((section) =>
-      section.some((element) => element.name === elementName)
-    );
-  };
-
-  // Función para verificar si hay cambios pendientes globalmente
-  const hasGlobalChanges = () => {
-    return globalChanges.added.length > 0 || globalChanges.removed.length > 0;
-  };
-
-  // Función para verificar si hay cambios pendientes en la sección actual
-  const hasChangesInBaseData = () => {
-    if (!selectedSection) return false;
-    
-    return selectedSection.elements.some(element => {
-      const currentlySelected = selectedElements[element.name] !== undefined 
-        ? selectedElements[element.name] 
-        : isElementInBaseData(element.name);
-      
-      const originallyInBase = isElementInBaseData(element.name);
-      
-      // Hay cambio si el estado actual es diferente al original
-      return currentlySelected !== originallyInBase;
-    });
-  };
-
-  // Función para obtener elementos que han cambiado en la sección actual
-  const getChangedElements = () => {
-    if (!selectedSection) return { added: [], removed: [] };
-    
-    const added = [];
-    const removed = [];
-    
-    selectedSection.elements.forEach(element => {
-      const currentlySelected = selectedElements[element.name] !== undefined 
-        ? selectedElements[element.name] 
-        : isElementInBaseData(element.name);
-      
-      const originallyInBase = isElementInBaseData(element.name);
-      
-      if (!originallyInBase && currentlySelected) {
-        added.push(element.name);
-      } else if (originallyInBase && !currentlySelected) {
-        removed.push(element.name);
-      }
-    });
-    
-    return { added, removed };
-  };
-
-  // Función para actualizar los cambios globales
-  const updateGlobalChanges = () => {
-    if (!dataXSD) return;
-
-    const allAdded = [];
-    const allRemoved = [];
-
-    // Recorrer todas las secciones y elementos
-    Object.keys(dataXSD).forEach(sectionName => {
-      dataXSD[sectionName].forEach(element => {
-        const currentlySelected = selectedElements[element.name] !== undefined 
-          ? selectedElements[element.name] 
-          : isElementInBaseData(element.name);
-        
-        const originallyInBase = isElementInBaseData(element.name);
-        
-        if (!originallyInBase && currentlySelected) {
-          allAdded.push(element.name);
-        } else if (originallyInBase && !currentlySelected) {
-          allRemoved.push(element.name);
-        }
-      });
-    });
-
-    setGlobalChanges({ added: allAdded, removed: allRemoved });
-  };
-
-  // Actualizar cambios globales cada vez que cambie selectedElements
-  useEffect(() => {
-    updateGlobalChanges();
-  }, [selectedElements, dataXSD, baseData]);
-
-  const handleDeadTokenCancel = () => {
-    setShowDeadToken(false);
-    setDeadTokenReason("");
-    setTextToken("");
-    clearTimeout(logoutTimeout.current);
-    resetInactivityTimer();
-  };
-
-  const handleLogout = () => {
-    setError(null);
-    setLoading(true);
-    const res = logout();
-    router.push("/");
-  };
-
-  const handleOnChangeView = () => {
-    setError(null);
-    setLoading(true);
-    router.push("/MainView");
-  };
-
-  const handleCheckboxChange = (elementName, checked) => {
-    setSelectedElements((prev) => ({
-      ...prev,
-      [elementName]: checked,
-    }));
-  };
-
+  // Section handlers
   const handleChildrenSelection = (elementWithChildren) => {
     setSelectedSection({
       groupName: `${elementWithChildren.elementName} (de ${elementWithChildren.parentSection})`,
@@ -269,6 +133,7 @@ export default function EsquemasConf() {
           <Loader />
         </div>
       )}
+      
       {error && (
         <div
           style={{
@@ -310,90 +175,31 @@ export default function EsquemasConf() {
         </div>
       )}
 
-      <div className="flex h-screen flex-col">
-        {/* Header ya está arriba */}
+      {showVerification && verificationData && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <Verification
+            title="Elemento con hijos detectado"
+            message={`El elemento "${verificationData.element.name}" tiene ${verificationData.totalChildren} elementos hijos no seleccionados${verificationData.allChildren > verificationData.totalChildren ? ` (${verificationData.allChildren - verificationData.totalChildren} ya están seleccionados)` : ''}. ¿Desea agregar los elementos hijos faltantes también?`}
+            accept="Agregar todos los faltantes"
+            cancel="Solo el seleccionado"
+            onAccept={handleVerificationAccept}
+            onCancel={handleVerificationCancel}
+            onClose={handleVerificationClose}
+          />
+        </div>
+      )}
 
+      <div className="flex h-screen flex-col">
         <div className="flex flex-1 overflow-hidden">
           {/* Menú lateral */}
-          <div className="w-95 bg-gray-50 border-r border-gray-200 overflow-y-auto">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  Estructura del XSD
-                </h2>
-                {hasGlobalChanges() && (
-                  <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
-                    {globalChanges.added.length + globalChanges.removed.length} cambios
-                  </div>
-                )}
-              </div>
-
-              {!dataXSD ? (
-                <p className="text-gray-500">Cargando elementos...</p>
-              ) : (
-                <div className="space-y-4">
-                  {/* Secciones principales */}
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">
-                      Secciones Principales
-                    </h3>
-                    <div className="space-y-2">
-                      {Object.keys(dataXSD).map((sectionName, index) => (
-                        <div key={`section-${index}`} className="relative">
-                          <div
-                            className={`${
-                              selectedSection?.groupName === sectionName
-                                ? "bg-indigo-50 border-l-4 border-indigo-500 pl-2 rounded-r-lg"
-                                : ""
-                            }`}
-                          >
-                            <Button
-                              text={sectionName}
-                              onClick={() =>
-                                handleSectionSelection(sectionName)
-                              }
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Elementos con subcampos */}
-                  {getElementsWithChildren().length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-2">
-                        Elementos con Subcampos
-                      </h3>
-                      <div className="space-y-2">
-                        {getElementsWithChildren().map(
-                          (elementWithChildren, index) => (
-                            <div key={`element-${index}`} className="relative">
-                              <div
-                                className={`${
-                                  selectedSection?.parentInfo?.element ===
-                                  elementWithChildren.elementName
-                                    ? "bg-green-50 border-l-4 border-green-500 pl-2 rounded-r-lg"
-                                    : ""
-                                }`}
-                              >
-                                <Button
-                                  text={`${elementWithChildren.elementName}`}
-                                  onClick={() =>
-                                    handleChildrenSelection(elementWithChildren)
-                                  }
-                                />
-                              </div>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+          <SideMenu
+            dataXSD={dataXSD}
+            selectedSection={selectedSection}
+            hasGlobalChanges={hasGlobalChanges}
+            globalChanges={globalChanges}
+            onSectionSelection={handleSectionSelection}
+            onChildrenSelection={handleChildrenSelection}
+          />
 
           {/* Contenido principal */}
           <div className="flex-1 overflow-y-auto">
@@ -416,222 +222,40 @@ export default function EsquemasConf() {
                       </h3>
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <table className="table-auto w-full">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Nombre
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Tipo
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Min Occurs
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Max Occurs
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Tipo Especial
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Atributos
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Compartido con {user?.institution}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {selectedSection.elements.map((element, i) => {
-                            const currentlySelected = selectedElements[element.name] !== undefined 
-                              ? selectedElements[element.name] 
-                              : isElementInBaseData(element.name);
-                            const originallyInBase = isElementInBaseData(element.name);
-                            const hasChanged = currentlySelected !== originallyInBase;
-                            
-                            return (
-                            <tr key={i} className={`hover:bg-gray-50 ${hasChanged ? 'bg-yellow-50 border-l-4 border-yellow-400' : ''}`}>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                <div className="flex items-center gap-2">
-                                  {element.name}
-                                  {hasChanged && (
-                                    <span className="text-yellow-600 text-xs">
-                                      {currentlySelected ? '(+)' : '(-)'}
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                <span
-                                  className={`px-2 py-1 rounded text-xs font-medium ${
-                                    (
-                                      element.type || element.baseType
-                                    )?.endsWith("Type")
-                                      ? "bg-purple-100 text-purple-800"
-                                      : "bg-gray-100 text-gray-800"
-                                  }`}
-                                >
-                                  {element.type || element.baseType || "N/A"}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                <span
-                                  className={`px-2 py-1 rounded text-xs font-medium ${
-                                    element.minOccurs === "0"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : "bg-green-100 text-green-800"
-                                  }`}
-                                >
-                                  {element.minOccurs}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                <span
-                                  className={`px-2 py-1 rounded text-xs font-medium ${
-                                    element.maxOccurs === "unbounded"
-                                      ? "bg-purple-100 text-purple-800"
-                                      : "bg-gray-100 text-gray-800"
-                                  }`}
-                                >
-                                  {element.maxOccurs}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                <div className="flex gap-1">
-                                  {element.isSimpleContent && (
-                                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                                      SimpleContent
-                                    </span>
-                                  )}
-                                  {element.hasComplexType && (
-                                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                                      ComplexType
-                                    </span>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 text-sm">
-                                {element.attributes &&
-                                element.attributes.length > 0 ? (
-                                  <div className="space-y-1">
-                                    {element.attributes.map(
-                                      (attr, attrIndex) => (
-                                        <div
-                                          key={attrIndex}
-                                          className="text-xs"
-                                        >
-                                          <span className="font-medium text-blue-600">
-                                            {attr.name}
-                                          </span>
-                                          <span className="text-gray-500 ml-1">
-                                            ({attr.type})
-                                          </span>
-                                          <span
-                                            className={`ml-1 px-1 py-0.5 rounded ${
-                                              attr.use === "required"
-                                                ? "bg-red-100 text-red-700"
-                                                : "bg-gray-100 text-gray-600"
-                                            }`}
-                                          >
-                                            {attr.use}
-                                          </span>
-                                        </div>
-                                      )
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-400">-</span>
-                                )}
-                              </td>
-                              <td className="px-6 py-4 text-sm ">
-                                <div className="flex justify-center">
-                                  <Checkbox
-                                    id={`checkbox-${element.name}-${i}`}
-                                    checked={
-                                      selectedElements[element.name] !==
-                                      undefined
-                                        ? selectedElements[element.name]
-                                        : isElementInBaseData(element.name)
-                                    }
-                                    onChange={(e) =>
-                                      handleCheckboxChange(
-                                        element.name,
-                                        e.target.checked
-                                      )
-                                    }
-                                  />
-                                </div>
-                              </td>
-                            </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                    <ElementsTable
+                      elements={selectedSection.elements}
+                      user={user}
+                      isElementSelectedByUniqueId={isElementSelectedByUniqueId}
+                      isElementInBaseData={isElementInBaseData}
+                      getElementUniqueId={getElementUniqueId}
+                      handleCheckboxChange={handleCheckboxChange}
+                    />
                   </div>
+
                   {selectedSection.groupName === "cvu" && (
                     <Button text="Ver Diagrama" onClick={handleShowTreeView} />
                   )}
-                  
-                  {/* Panel de cambios en la sección actual */}
-                  {hasChangesInBaseData() && (
-                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <h4 className="text-sm font-medium text-blue-800 mb-2">
-                        Cambios en esta sección
-                      </h4>
-                      {(() => {
-                        const changes = getChangedElements();
-                        return (
-                          <div className="text-xs text-blue-700">
-                            {changes.added.length > 0 && (
-                              <p>✅ Elementos a agregar: {changes.added.join(', ')}</p>
-                            )}
-                            {changes.removed.length > 0 && (
-                              <p>❌ Elementos a remover: {changes.removed.join(', ')}</p>
-                            )}
-                          </div>
-                        );
-                      })()}
+
+                  {/* Mensaje de última acción */}
+                  {lastActionMessage && (
+                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-sm text-green-800 font-medium">
+                        {lastActionMessage}
+                      </p>
                     </div>
                   )}
 
-                  {/* Panel de cambios globales */}
-                  {hasGlobalChanges() && (
-                    <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <h4 className="text-sm font-medium text-yellow-800 mb-2">
-                        Todos los cambios pendientes
-                      </h4>
-                      <div className="text-xs text-yellow-700 mb-3">
-                        {globalChanges.added.length > 0 && (
-                          <p>✅ Elementos a agregar ({globalChanges.added.length}): {globalChanges.added.join(', ')}</p>
-                        )}
-                        {globalChanges.removed.length > 0 && (
-                          <p>❌ Elementos a remover ({globalChanges.removed.length}): {globalChanges.removed.join(', ')}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          text="Actualizar Base" 
-                          onClick={() => {
-                            console.log("Cambios globales a aplicar:", globalChanges);
-                            // Aquí implementar la lógica para actualizar baseData
-                            // Después de actualizar, limpiar los cambios:
-                            // setSelectedElements({});
-                            // setGlobalChanges({ added: [], removed: [] });
-                          }} 
-                        />
-                        <Button 
-                          text="Descartar Cambios" 
-                          onClick={() => {
-                            setSelectedElements({});
-                            setGlobalChanges({ added: [], removed: [] });
-                          }} 
-                        />
-                      </div>
-                    </div>
-                  )}
+                  <ChangesPanel
+                    hasChangesInBaseData={hasChangesInBaseData}
+                    hasGlobalChanges={hasGlobalChanges}
+                    getChangedElements={getChangedElements}
+                    globalChanges={globalChanges}
+                    selectedElements={selectedElements}
+                    selectedSection={selectedSection}
+                    getElementUniqueId={getElementUniqueId}
+                    setSelectedElements={setSelectedElements}
+                    setGlobalChanges={setGlobalChanges}
+                  />
                 </div>
               ) : (
                 <div className="text-center py-12">
@@ -662,6 +286,7 @@ export default function EsquemasConf() {
           </div>
         </div>
       </div>
+
       <TreeView
         data={dataXSD}
         selectedSection={selectedSection}
