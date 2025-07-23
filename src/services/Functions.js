@@ -88,3 +88,16 @@ export const xsdToJson = async (opt) => {
     throw new Error("Error al convertir XSD a JSON");
   }
 }
+
+export const updateBaseData = async (changesData) => {
+  try {
+    const res = await apiClient.post("/api/update-base", changesData);
+    return res.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detail || "Error al actualizar la base de datos");
+    } else {
+      throw new Error("Error al actualizar la base de datos");
+    }
+  }
+}

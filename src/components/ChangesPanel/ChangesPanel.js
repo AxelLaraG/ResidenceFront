@@ -1,4 +1,5 @@
 import Button from "@/components/ui/Button/Button";
+import { updateBaseData } from "@/services/Functions";
 
 const ChangesPanel = ({ 
   hasChangesInBaseData,
@@ -9,47 +10,36 @@ const ChangesPanel = ({
   selectedSection,
   getElementUniqueId,
   setSelectedElements,
-  setGlobalChanges
+  setGlobalChanges,
+  setLastActionMessage
 }) => {
-  const handleUpdateBase = () => {
-    Object.keys(selectedElements).forEach((uniqueId) => {
-      if (selectedElements[uniqueId]) {
-        console.log(`  ${uniqueId} -> ${selectedElements[uniqueId].name}`);
-      }
-    });
-    
-    // Verificar discrepancias
-    const selectedCount = Object.keys(selectedElements).filter(key => selectedElements[key]).length;
-    const globalManualCount = globalChanges.manual.length;
-    const globalAutomatedCount = globalChanges.automated.length;
-    const globalTotalCount = globalManualCount + globalAutomatedCount;
-    
-    console.log(`📊 Discrepancy Check:`);
-    console.log(`  Selected Elements: ${selectedCount}`);
-    console.log(`  Global Manual: ${globalManualCount}`);
-    console.log(`  Global Automated: ${globalAutomatedCount}`);
-    console.log(`  Global Total: ${globalTotalCount}`);
-    
-    if (selectedCount !== globalTotalCount) {
-      console.log(`⚠️ DISCREPANCY: selectedElements (${selectedCount}) != globalChanges total (${globalTotalCount})`);
+  const handleUpdateBase = async () => {
+    try {
+      // Preparar los datos para enviar al backend
+      const changesData = {
+        manual: globalChanges.manual,
+        automated: globalChanges.automated
+      };
+
+      console.log("Enviando cambios al servidor:", changesData);
+      setLastActionMessage("⏳ Guardando cambios en el servidor...");
+
+      // Enviar al backend
+      const result = await updateBaseData(changesData);
       
-      Object.keys(selectedElements).forEach(uniqueId => {
-        if (selectedElements[uniqueId]) {
-          const foundInManual = globalChanges.manual.some(item => item.uniqueId === uniqueId);
-          const foundInAutomated = globalChanges.automated.some(item => item.uniqueId === uniqueId);
-          if (!foundInManual && !foundInAutomated) {
-            console.log(`  ❌ Missing: ${uniqueId} -> ${selectedElements[uniqueId].name}`);
-          }
-        }
-      });
-    }
-    
-    if (selectedSection) {
-      selectedSection.elements.forEach((element, index) => {
-        const elementId = getElementUniqueId(element);
-        const isSelected = selectedElements[elementId] !== undefined;
-        console.log(`  ${index + 1}. ${element.name} (ID: ${elementId}) - Seleccionado: ${isSelected}`);
-      });
+      console.log("Respuesta del servidor:", result);
+      
+      // Limpiar los cambios después de guardar exitosamente
+      setSelectedElements({});
+      setGlobalChanges({ manual: [], automated: [] });
+      
+      setLastActionMessage(`✅ ${result.message}`);
+      setTimeout(() => setLastActionMessage(null), 5000);
+      
+    } catch (error) {
+      console.error("Error al guardar cambios:", error);
+      setLastActionMessage(`❌ Error al guardar: ${error.message}`);
+      setTimeout(() => setLastActionMessage(null), 5000);
     }
   };
 

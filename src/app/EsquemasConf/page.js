@@ -260,6 +260,7 @@ export default function EsquemasConf() {
                     getElementUniqueId={getElementUniqueId}
                     setSelectedElements={setSelectedElements}
                     setGlobalChanges={setGlobalChanges}
+                    setLastActionMessage={setLastActionMessage}
                   />
                 </div>
               ) : (
