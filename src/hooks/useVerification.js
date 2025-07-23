@@ -8,7 +8,9 @@ export const useVerification = (
   countElementChildren,
   countUnselectedChildren,
   setLastActionMessage,
-  selectedSection
+  selectedSection,
+  markAsManualSelection,
+  markAsAutomatedSelection
 ) => {
   const [showVerification, setShowVerification] = useState(false);
   const [verificationData, setVerificationData] = useState(null);
@@ -39,11 +41,17 @@ export const useVerification = (
       }
     }
 
+    // Si no tiene hijos, está desmarcando, o todos los hijos ya están seleccionados, proceder normalmente
     const uniqueId = getElementUniqueId(element);
     setSelectedElements((prev) => ({
       ...prev,
       [uniqueId]: checked ? elementData : undefined,
     }));
+
+    // Marcar como selección manual solo si está marcando
+    if (checked) {
+      markAsManualSelection(uniqueId);
+    }
   };
 
   // Manejar aceptación de verificación
@@ -58,6 +66,12 @@ export const useVerification = (
     newSelectedElements[mainElementId] = element;
     console.log(`  Agregado (principal): ${mainElementId}`);
     let elementsAdded = 1;
+    
+    // Marcar el elemento principal como manual
+    markAsManualSelection(mainElementId);
+    
+    // Recopilar IDs de elementos automáticos
+    const automatedIds = [];
 
     const addUnselectedChildren = (parentElement, childrenArray = null) => {
       const children = childrenArray || parentElement.children;
@@ -124,6 +138,9 @@ export const useVerification = (
             newSelectedElements[childId] = child;
             console.log(`  Agregado (hijo): ${childId}`);
             elementsAdded++;
+            
+            // Agregar a la lista de elementos automáticos
+            automatedIds.push(childId);
           } else {
             console.log(`  Omitido (ya seleccionado): ${child.name} con ID ${childId}`);
           }
@@ -137,8 +154,10 @@ export const useVerification = (
 
     addUnselectedChildren(element);
     
-    console.log(`Total de elementos agregados: ${elementsAdded}`);
-    console.log("Estado actualizado de selectedElements:", newSelectedElements);
+    // Marcar las selecciones automáticas
+    if (automatedIds.length > 0 && markAsAutomatedSelection) {
+      markAsAutomatedSelection(automatedIds);
+    }
     
     setLastActionMessage(`✅ Se agregaron ${elementsAdded} elementos (${element.name} + ${elementsAdded - 1} hijos faltantes)`);
     setTimeout(() => setLastActionMessage(null), 5000);
@@ -159,6 +178,11 @@ export const useVerification = (
       ...prev,
       [uniqueId]: elementData,
     }));
+    
+    // Marcar como selección manual
+    if (markAsManualSelection) {
+      markAsManualSelection([uniqueId]);
+    }
     
     setLastActionMessage(`✅ Se agregó solo el elemento: ${element.name}`);
     setTimeout(() => setLastActionMessage(null), 5000);

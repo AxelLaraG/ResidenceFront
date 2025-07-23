@@ -57,6 +57,9 @@ export default function EsquemasConf() {
     hasGlobalChanges,
     hasChangesInBaseData,
     getChangedElements,
+    markAsManualSelection,
+    markAsAutomatedSelection,
+    manualSelections,
   } = useElementSelection(dataXSD, baseData, selectedSection);
 
   const {
@@ -74,7 +77,9 @@ export default function EsquemasConf() {
     countElementChildren,
     countUnselectedChildren,
     setLastActionMessage,
-    selectedSection
+    selectedSection,
+    markAsManualSelection,
+    markAsAutomatedSelection
   );
 
   // Load XSD data

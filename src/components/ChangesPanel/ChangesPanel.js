@@ -12,21 +12,39 @@ const ChangesPanel = ({
   setGlobalChanges
 }) => {
   const handleUpdateBase = () => {
-    console.log("=== DEBUG: Estado actual ===");
-    console.log("Cambios globales a aplicar:", globalChanges);
-    console.log("Elementos seleccionados por ID único:", selectedElements);
-    console.log("=== Mapeo de IDs únicos ===");
     Object.keys(selectedElements).forEach((uniqueId) => {
       if (selectedElements[uniqueId]) {
         console.log(`  ${uniqueId} -> ${selectedElements[uniqueId].name}`);
       }
     });
-    console.log(`Total de elementos seleccionados: ${Object.keys(selectedElements).length}`);
+    
+    // Verificar discrepancias
+    const selectedCount = Object.keys(selectedElements).filter(key => selectedElements[key]).length;
+    const globalManualCount = globalChanges.manual.length;
+    const globalAutomatedCount = globalChanges.automated.length;
+    const globalTotalCount = globalManualCount + globalAutomatedCount;
+    
+    console.log(`📊 Discrepancy Check:`);
+    console.log(`  Selected Elements: ${selectedCount}`);
+    console.log(`  Global Manual: ${globalManualCount}`);
+    console.log(`  Global Automated: ${globalAutomatedCount}`);
+    console.log(`  Global Total: ${globalTotalCount}`);
+    
+    if (selectedCount !== globalTotalCount) {
+      console.log(`⚠️ DISCREPANCY: selectedElements (${selectedCount}) != globalChanges total (${globalTotalCount})`);
+      
+      Object.keys(selectedElements).forEach(uniqueId => {
+        if (selectedElements[uniqueId]) {
+          const foundInManual = globalChanges.manual.some(item => item.uniqueId === uniqueId);
+          const foundInAutomated = globalChanges.automated.some(item => item.uniqueId === uniqueId);
+          if (!foundInManual && !foundInAutomated) {
+            console.log(`  ❌ Missing: ${uniqueId} -> ${selectedElements[uniqueId].name}`);
+          }
+        }
+      });
+    }
     
     if (selectedSection) {
-      console.log("=== DEBUG: Sección actual ===");
-      console.log("Sección:", selectedSection.groupName);
-      console.log("Elementos en la sección:");
       selectedSection.elements.forEach((element, index) => {
         const elementId = getElementUniqueId(element);
         const isSelected = selectedElements[elementId] !== undefined;
@@ -37,7 +55,7 @@ const ChangesPanel = ({
 
   const handleDiscardChanges = () => {
     setSelectedElements({});
-    setGlobalChanges({ added: [], removed: [] });
+    setGlobalChanges({ manual: [], automated: [] });
   };
 
   return (
@@ -70,6 +88,21 @@ const ChangesPanel = ({
         </div>
       )}
 
+      {/* Panel de elementos agregados automáticamente */}
+      {globalChanges.automated.length > 0 && (
+        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <h4 className="text-sm font-medium text-green-800 mb-2">
+            Elementos agregados automáticamente ({globalChanges.automated.length})
+          </h4>
+          <div className="text-xs text-green-700">
+            <p>
+              🤖 Elementos hijos agregados automáticamente:{" "}
+              {globalChanges.automated.map((item) => item.name).join(", ")}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Panel de cambios globales */}
       {hasGlobalChanges() && (
         <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -77,18 +110,17 @@ const ChangesPanel = ({
             Todos los cambios pendientes
           </h4>
           <div className="text-xs text-yellow-700 mb-3">
-            {globalChanges.added.length > 0 && (
+            {globalChanges.manual.length > 0 && (
               <p>
-                ✅ Elementos a agregar ({globalChanges.added.length}):{" "}
-                {globalChanges.added.map((item) => item.name).join(", ")}
+                ✅ Elementos manuales ({globalChanges.manual.length}):{" "}
+                {globalChanges.manual.map((item) => item.name).join(", ")}
               </p>
             )}
-            {globalChanges.removed.length > 0 && (
-              <p>
-                ❌ Elementos a remover ({globalChanges.removed.length}):{" "}
-                {globalChanges.removed.map((item) => item.name).join(", ")}
-              </p>
-            )}
+            <div className="mt-1 pt-1 border-t border-yellow-300">
+              <strong>
+                Total de elementos: {globalChanges.manual.length + globalChanges.automated.length}
+              </strong>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button text="Actualizar Base" onClick={handleUpdateBase} />

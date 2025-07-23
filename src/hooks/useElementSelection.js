@@ -5,7 +5,10 @@ export const useElementSelection = (dataXSD, baseData, selectedSection) => {
   const [globalChanges, setGlobalChanges] = useState({
     added: [],
     removed: [],
+    automated: [], // Nuevos elementos agregados automáticamente
+    manual: [], // Elementos agregados manualmente
   });
+  const [manualSelections, setManualSelections] = useState(new Set()); // Track de selecciones manuales
 
   // Función para generar ID único de elemento
   const getElementUniqueId = (element, parentContext = null) => {
@@ -37,17 +40,6 @@ export const useElementSelection = (dataXSD, baseData, selectedSection) => {
     const uniqueId = getElementUniqueId(element);
     
     if (selectedElements[uniqueId] !== undefined) {
-      return true;
-    }
-    
-    // Fallback: buscar en todas las claves
-    const elementName = element.name;
-    const foundKeys = Object.keys(selectedElements).filter(key => 
-      key.endsWith(`_${elementName}`) && selectedElements[key]
-    );
-    
-    if (foundKeys.length > 0) {
-      console.log(`Elemento ${elementName} encontrado con ID alternativo: ${foundKeys[0]} (buscado como: ${uniqueId})`);
       return true;
     }
     
@@ -123,43 +115,93 @@ export const useElementSelection = (dataXSD, baseData, selectedSection) => {
     const allAdded = [];
     const allRemoved = [];
 
-    const checkElement = (element, parentContext = null) => {
-      const uniqueId = getElementUniqueId(element, parentContext);
-      const currentlySelected = selectedElements[uniqueId] !== undefined;
+    // Función para generar todos los posibles IDs de un elemento
+    const getAllPossibleIds = (element, sectionName, parentElementName = null) => {
+      const possibleIds = [];
+      
+      // ID como elemento principal de sección
+      possibleIds.push(`${sectionName}_${element.name}`);
+      
+      // ID como subcampo si tiene padre
+      if (parentElementName) {
+        possibleIds.push(`${sectionName}_${parentElementName}_${element.name}`);
+      }
+      
+      return possibleIds;
+    };
+
+    // Función para verificar si un elemento está seleccionado con cualquier ID posible
+    const isElementSelectedWithAnyId = (element, sectionName, parentElementName = null) => {
+      const possibleIds = getAllPossibleIds(element, sectionName, parentElementName);
+      
+      for (const id of possibleIds) {
+        if (selectedElements[id] !== undefined) {
+          return { isSelected: true, selectedId: id, data: selectedElements[id] };
+        }
+      }
+      
+      return { isSelected: false, selectedId: null, data: null };
+    };
+
+    // Función recursiva para revisar elementos
+    const checkElement = (element, sectionName, parentElementName = null) => {
+      const { isSelected, selectedId, data } = isElementSelectedWithAnyId(element, sectionName, parentElementName);
       const originallyInBase = isElementInBaseData(element.name);
 
-      if (!originallyInBase && currentlySelected) {
+      if (!originallyInBase && isSelected) {
         allAdded.push({
           name: element.name,
-          data: selectedElements[uniqueId],
-          uniqueId,
+          data: data,
+          uniqueId: selectedId,
         });
-      } else if (originallyInBase && !currentlySelected) {
-        allRemoved.push({ name: element.name, data: element, uniqueId });
+      } else if (originallyInBase && !isSelected) {
+        // Para elementos removidos, usar el ID que tendría en su sección natural
+        const naturalId = `${sectionName}_${element.name}`;
+        allRemoved.push({ 
+          name: element.name, 
+          data: element, 
+          uniqueId: naturalId 
+        });
       }
 
+      // Revisar también los children del elemento
       if (element.children && element.children.length > 0) {
         element.children.forEach((child) => {
-          const childContext = parentContext
-            ? `${parentContext}_${element.name}`
-            : element.name;
-          checkElement(child, childContext);
+          checkElement(child, sectionName, element.name);
         });
       }
     };
 
+    // Recorrer todas las secciones y elementos
     Object.keys(dataXSD).forEach((sectionName) => {
       dataXSD[sectionName].forEach((element) => {
         checkElement(element, sectionName);
       });
     });
 
-    setGlobalChanges({ added: allAdded, removed: allRemoved });
+    // Separar entre manuales y automáticos
+    const manualAdded = [];
+    const automatedAdded = [];
+
+    allAdded.forEach(item => {
+      if (manualSelections.has(item.uniqueId)) {
+        manualAdded.push(item);
+      } else {
+        automatedAdded.push(item);
+      }
+    });
+
+    setGlobalChanges({ 
+      added: allAdded, 
+      removed: allRemoved,
+      manual: manualAdded,
+      automated: automatedAdded
+    });
   };
 
   // Verificar si hay cambios globales
   const hasGlobalChanges = () => {
-    return globalChanges.added.length > 0 || globalChanges.removed.length > 0;
+    return globalChanges.manual.length > 0 || globalChanges.automated.length > 0;
   };
 
   // Verificar si hay cambios en la sección actual
@@ -183,15 +225,21 @@ export const useElementSelection = (dataXSD, baseData, selectedSection) => {
     selectedSection.elements.forEach((element) => {
       const currentlySelected = isElementSelectedByUniqueId(element);
       const originallyInBase = isElementInBaseData(element.name);
-      const uniqueId = getElementUniqueId(element);
 
       if (!originallyInBase && currentlySelected) {
-        added.push({
-          name: element.name,
-          data: selectedElements[uniqueId],
-          uniqueId,
-        });
+        // Buscar el ID real con el que está seleccionado
+        const uniqueId = getElementUniqueId(element);
+        let actualData = selectedElements[uniqueId];
+        
+        if (actualData) {
+          added.push({
+            name: element.name,
+            data: actualData,
+            uniqueId,
+          });
+        }
       } else if (originallyInBase && !currentlySelected) {
+        const uniqueId = getElementUniqueId(element);
         removed.push({ name: element.name, data: element, uniqueId });
       }
     });
@@ -199,9 +247,20 @@ export const useElementSelection = (dataXSD, baseData, selectedSection) => {
     return { added, removed };
   };
 
+  // Función para marcar una selección como manual
+  const markAsManualSelection = (uniqueId) => {
+    setManualSelections(prev => new Set([...prev, uniqueId]));
+  };
+
+  // Función para marcar múltiples selecciones como automáticas (cuando se agregan hijos)
+  const markAsAutomatedSelection = (uniqueIds) => {
+    // Los IDs automáticos no se agregan a manualSelections
+    // Se distinguen por exclusión
+  };
+
   useEffect(() => {
     updateGlobalChanges();
-  }, [selectedElements, dataXSD, baseData]);
+  }, [selectedElements, dataXSD, baseData, manualSelections]);
 
   return {
     selectedElements,
@@ -216,5 +275,8 @@ export const useElementSelection = (dataXSD, baseData, selectedSection) => {
     hasGlobalChanges,
     hasChangesInBaseData,
     getChangedElements,
+    markAsManualSelection,
+    markAsAutomatedSelection,
+    manualSelections,
   };
 };
