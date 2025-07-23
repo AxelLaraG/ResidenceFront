@@ -12,6 +12,7 @@ import { logout } from "@/services/Functions";
 import ErrorCard from "@/components/ui/ErrorMessage/Error";
 import Loader from "@/components/ui/LoadPage/Load";
 import DeadToken from "@/components/ui/DeadToken/DeadToken";
+import Checkbox from "@/components/ui/CheckBox/CheckBox";
 
 export default function MainView() {
   const [data, setData] = useState(null);
@@ -152,12 +153,6 @@ export default function MainView() {
           />
         </div>
       )}
-
-      <div style={{ display: "flex", height: "80vh" }}>
-        <aside style={{ width:220}}>
-
-        </aside>
-      </div>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import Loader from "@/components/ui/LoadPage/Load";
 import DeadToken from "@/components/ui/DeadToken/DeadToken";
 import Button from "@/components/ui/Button/Button";
 import TreeView from "@/components/ui/TreeView/TreeView";
+import Checkbox from "@/components/ui/CheckBox/CheckBox";
 
 export default function EsquemasConf() {
   const [error, setError] = useState(null);
@@ -22,6 +23,9 @@ export default function EsquemasConf() {
   const [selectedSection, setSelectedSection] = useState(null);
   const [showTreeView, setShowTreeView] = useState(false);
   const [baseData, setBaseData] = useState(null);
+  const [selectedElements, setSelectedElements] = useState({});
+  const [baseUpdated, setBaseUpdated] = useState(false);
+  const [globalChanges, setGlobalChanges] = useState({ added: [], removed: [] });
 
   const router = useRouter();
   const inactivityTimeout = useRef(null);
@@ -82,27 +86,6 @@ export default function EsquemasConf() {
     }
   }
 
-  const handleDeadTokenCancel = () => {
-    setShowDeadToken(false);
-    setDeadTokenReason("");
-    setTextToken("");
-    clearTimeout(logoutTimeout.current);
-    resetInactivityTimer();
-  };
-
-  const handleLogout = () => {
-    setError(null);
-    setLoading(true);
-    const res = logout();
-    router.push("/");
-  };
-
-  const handleOnChangeView = () => {
-    setError(null);
-    setLoading(true);
-    router.push("/MainView");
-  };
-
   const getElementsWithChildren = () => {
     if (!dataXSD) return [];
 
@@ -141,6 +124,118 @@ export default function EsquemasConf() {
     return elementsWithChildren;
   };
 
+  const isElementInBaseData = (elementName) => {
+    if (!baseData) return false;
+    return Object.values(baseData).some((section) =>
+      section.some((element) => element.name === elementName)
+    );
+  };
+
+  // Función para verificar si hay cambios pendientes globalmente
+  const hasGlobalChanges = () => {
+    return globalChanges.added.length > 0 || globalChanges.removed.length > 0;
+  };
+
+  // Función para verificar si hay cambios pendientes en la sección actual
+  const hasChangesInBaseData = () => {
+    if (!selectedSection) return false;
+    
+    return selectedSection.elements.some(element => {
+      const currentlySelected = selectedElements[element.name] !== undefined 
+        ? selectedElements[element.name] 
+        : isElementInBaseData(element.name);
+      
+      const originallyInBase = isElementInBaseData(element.name);
+      
+      // Hay cambio si el estado actual es diferente al original
+      return currentlySelected !== originallyInBase;
+    });
+  };
+
+  // Función para obtener elementos que han cambiado en la sección actual
+  const getChangedElements = () => {
+    if (!selectedSection) return { added: [], removed: [] };
+    
+    const added = [];
+    const removed = [];
+    
+    selectedSection.elements.forEach(element => {
+      const currentlySelected = selectedElements[element.name] !== undefined 
+        ? selectedElements[element.name] 
+        : isElementInBaseData(element.name);
+      
+      const originallyInBase = isElementInBaseData(element.name);
+      
+      if (!originallyInBase && currentlySelected) {
+        added.push(element.name);
+      } else if (originallyInBase && !currentlySelected) {
+        removed.push(element.name);
+      }
+    });
+    
+    return { added, removed };
+  };
+
+  // Función para actualizar los cambios globales
+  const updateGlobalChanges = () => {
+    if (!dataXSD) return;
+
+    const allAdded = [];
+    const allRemoved = [];
+
+    // Recorrer todas las secciones y elementos
+    Object.keys(dataXSD).forEach(sectionName => {
+      dataXSD[sectionName].forEach(element => {
+        const currentlySelected = selectedElements[element.name] !== undefined 
+          ? selectedElements[element.name] 
+          : isElementInBaseData(element.name);
+        
+        const originallyInBase = isElementInBaseData(element.name);
+        
+        if (!originallyInBase && currentlySelected) {
+          allAdded.push(element.name);
+        } else if (originallyInBase && !currentlySelected) {
+          allRemoved.push(element.name);
+        }
+      });
+    });
+
+    setGlobalChanges({ added: allAdded, removed: allRemoved });
+  };
+
+  // Actualizar cambios globales cada vez que cambie selectedElements
+  useEffect(() => {
+    updateGlobalChanges();
+  }, [selectedElements, dataXSD, baseData]);
+
+  const handleDeadTokenCancel = () => {
+    setShowDeadToken(false);
+    setDeadTokenReason("");
+    setTextToken("");
+    clearTimeout(logoutTimeout.current);
+    resetInactivityTimer();
+  };
+
+  const handleLogout = () => {
+    setError(null);
+    setLoading(true);
+    const res = logout();
+    router.push("/");
+  };
+
+  const handleOnChangeView = () => {
+    setError(null);
+    setLoading(true);
+    router.push("/MainView");
+  };
+
+  const handleCheckboxChange = (elementName, checked) => {
+    setSelectedElements((prev) => ({
+      ...prev,
+      [elementName]: checked,
+    }));
+  };
+
   const handleChildrenSelection = (elementWithChildren) => {
     setSelectedSection({
       groupName: `${elementWithChildren.elementName} (de ${elementWithChildren.parentSection})`,
@@ -150,10 +245,6 @@ export default function EsquemasConf() {
         element: elementWithChildren.elementName,
       },
     });
-  };
-
-  const handleGroupSelection = (group) => {
-    setSelectedSection(group);
   };
 
   const handleSectionSelection = (sectionName) => {
@@ -226,9 +317,16 @@ export default function EsquemasConf() {
           {/* Menú lateral */}
           <div className="w-95 bg-gray-50 border-r border-gray-200 overflow-y-auto">
             <div className="p-4">
-              <h2 className="text-lg font-semibold mb-4 text-gray-800">
-                Estructura del XSD
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Estructura del XSD
+                </h2>
+                {hasGlobalChanges() && (
+                  <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+                    {globalChanges.added.length + globalChanges.removed.length} cambios
+                  </div>
+                )}
+              </div>
 
               {!dataXSD ? (
                 <p className="text-gray-500">Cargando elementos...</p>
@@ -346,10 +444,24 @@ export default function EsquemasConf() {
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                          {selectedSection.elements.map((element, i) => (
-                            <tr key={i} className="hover:bg-gray-50">
+                          {selectedSection.elements.map((element, i) => {
+                            const currentlySelected = selectedElements[element.name] !== undefined 
+                              ? selectedElements[element.name] 
+                              : isElementInBaseData(element.name);
+                            const originallyInBase = isElementInBaseData(element.name);
+                            const hasChanged = currentlySelected !== originallyInBase;
+                            
+                            return (
+                            <tr key={i} className={`hover:bg-gray-50 ${hasChanged ? 'bg-yellow-50 border-l-4 border-yellow-400' : ''}`}>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                {element.name}
+                                <div className="flex items-center gap-2">
+                                  {element.name}
+                                  {hasChanged && (
+                                    <span className="text-yellow-600 text-xs">
+                                      {currentlySelected ? '(+)' : '(-)'}
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                 <span
@@ -433,14 +545,92 @@ export default function EsquemasConf() {
                                   <span className="text-gray-400">-</span>
                                 )}
                               </td>
+                              <td className="px-6 py-4 text-sm ">
+                                <div className="flex justify-center">
+                                  <Checkbox
+                                    id={`checkbox-${element.name}-${i}`}
+                                    checked={
+                                      selectedElements[element.name] !==
+                                      undefined
+                                        ? selectedElements[element.name]
+                                        : isElementInBaseData(element.name)
+                                    }
+                                    onChange={(e) =>
+                                      handleCheckboxChange(
+                                        element.name,
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </td>
                             </tr>
-                          ))}
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
                   </div>
                   {selectedSection.groupName === "cvu" && (
                     <Button text="Ver Diagrama" onClick={handleShowTreeView} />
+                  )}
+                  
+                  {/* Panel de cambios en la sección actual */}
+                  {hasChangesInBaseData() && (
+                    <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h4 className="text-sm font-medium text-blue-800 mb-2">
+                        Cambios en esta sección
+                      </h4>
+                      {(() => {
+                        const changes = getChangedElements();
+                        return (
+                          <div className="text-xs text-blue-700">
+                            {changes.added.length > 0 && (
+                              <p>✅ Elementos a agregar: {changes.added.join(', ')}</p>
+                            )}
+                            {changes.removed.length > 0 && (
+                              <p>❌ Elementos a remover: {changes.removed.join(', ')}</p>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Panel de cambios globales */}
+                  {hasGlobalChanges() && (
+                    <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <h4 className="text-sm font-medium text-yellow-800 mb-2">
+                        Todos los cambios pendientes
+                      </h4>
+                      <div className="text-xs text-yellow-700 mb-3">
+                        {globalChanges.added.length > 0 && (
+                          <p>✅ Elementos a agregar ({globalChanges.added.length}): {globalChanges.added.join(', ')}</p>
+                        )}
+                        {globalChanges.removed.length > 0 && (
+                          <p>❌ Elementos a remover ({globalChanges.removed.length}): {globalChanges.removed.join(', ')}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          text="Actualizar Base" 
+                          onClick={() => {
+                            console.log("Cambios globales a aplicar:", globalChanges);
+                            // Aquí implementar la lógica para actualizar baseData
+                            // Después de actualizar, limpiar los cambios:
+                            // setSelectedElements({});
+                            // setGlobalChanges({ added: [], removed: [] });
+                          }} 
+                        />
+                        <Button 
+                          text="Descartar Cambios" 
+                          onClick={() => {
+                            setSelectedElements({});
+                            setGlobalChanges({ added: [], removed: [] });
+                          }} 
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
               ) : (
