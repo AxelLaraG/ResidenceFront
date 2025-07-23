@@ -8,6 +8,7 @@ import ErrorCard from "@/components/ui/ErrorMessage/Error";
 import Loader from "@/components/ui/LoadPage/Load";
 import DeadToken from "@/components/ui/DeadToken/DeadToken";
 import Button from "@/components/ui/Button/Button";
+import TreeView from "@/components/ui/TreeView/TreeView";
 
 export default function EsquemasConf() {
   const [error, setError] = useState(null);
@@ -19,6 +20,8 @@ export default function EsquemasConf() {
   const [stayOnline, setStayOnline] = useState(false);
   const [dataXSD, setDataXSD] = useState(null);
   const [selectedSection, setSelectedSection] = useState(null);
+  const [showTreeView, setShowTreeView] = useState(false);
+  const [baseData, setBaseData] = useState(null);
 
   const router = useRouter();
   const inactivityTimeout = useRef(null);
@@ -47,8 +50,12 @@ export default function EsquemasConf() {
         const usuario = await getCurrentUser();
         setUser(usuario);
 
-        const data = await xsdToJson();
+        const data = await xsdToJson("rizoma");
         setDataXSD(data);
+
+        const baseData = await xsdToJson("base");
+        setBaseData(baseData);
+        console.log("Base Data:", baseData);
       } catch (error) {
         console.log(error);
         setError("Error al cargar el XSD");
@@ -120,8 +127,8 @@ export default function EsquemasConf() {
 
         addedElementNames.add(element.name);
 
-        element.children.forEach( child => {
-          exploreElement(child,[...parentPath,element.name]);
+        element.children.forEach((child) => {
+          exploreElement(child, [...parentPath, element.name]);
         });
       }
     };
@@ -156,6 +163,14 @@ export default function EsquemasConf() {
     });
   };
 
+  const handleShowTreeView = () => {
+    setShowTreeView(true);
+  };
+
+  const handleCloseTreeView = () => {
+    setShowTreeView(false);
+  };
+
   return (
     <div>
       {loading && (
@@ -181,14 +196,16 @@ export default function EsquemasConf() {
         </div>
       )}
 
-      <Header
-        username=""
-        email={user?.email}
-        vista="2"
-        onLogout={handleLogout}
-        onChangeView={handleOnChangeView}
-        role={user?.role}
-      />
+      <div className="sticky top-0 z-40 bg-white shadow-md">
+        <Header
+          username=""
+          email={user?.email}
+          vista="2"
+          onLogout={handleLogout}
+          onChangeView={handleOnChangeView}
+          role={user?.role}
+        />
+      </div>
 
       {showDeadToken && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
@@ -323,6 +340,9 @@ export default function EsquemasConf() {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Atributos
                             </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Compartido con {user?.institution}
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -419,6 +439,9 @@ export default function EsquemasConf() {
                       </table>
                     </div>
                   </div>
+                  {selectedSection.groupName === "cvu" && (
+                    <Button text="Ver Diagrama" onClick={handleShowTreeView} />
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-12">
@@ -449,6 +472,12 @@ export default function EsquemasConf() {
           </div>
         </div>
       </div>
+      <TreeView
+        data={dataXSD}
+        selectedSection={selectedSection}
+        isOpen={showTreeView}
+        onClose={handleCloseTreeView}
+      />
     </div>
   );
 }

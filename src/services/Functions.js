@@ -50,7 +50,7 @@ export const getCurrentUser = async (token) => {
 export const fetchUserXML = async (username) => {
   try {
     const res = await fetch(
-      `http://localhost:8080/SECIHTIServ/${username}.xml`
+      `http://localhost:8080/SECIHTIServ/files/${username}.xml`
     );
     if (!res.ok) throw new Error("No se pudo obtener el XML del usuario");
     const xmlText = await res.text();
@@ -78,9 +78,11 @@ export const validateXML = async (formData) => {
   }
 };
 
-export const xsdToJson = async () => {
+export const xsdToJson = async (opt) => {
   try {
-    const res = await apiClient.get("/api/xsd");
+    const res = await apiClient.get("/api/xsd",{
+      params: { opt }  
+    });
     return res.data;
   } catch (error) {
     throw new Error("Error al convertir XSD a JSON");
