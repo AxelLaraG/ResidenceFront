@@ -87,7 +87,7 @@ export default function EsquemasConf() {
     const loadXSD = async () => {
       try {
         setLoading(true);
-        
+
         const data = await xsdToJson("rizoma");
         setDataXSD(data);
 
@@ -116,6 +116,18 @@ export default function EsquemasConf() {
     });
   };
 
+  const handleRefreshAfterUpdate = async () => {
+    try {
+      setLoading(true);
+      const baseDataResult = await xsdToJson("base");
+      setBaseData(baseDataResult);
+    } catch (error) {
+      setError("Error al actualizar los datos base");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSectionSelection = (sectionName) => {
     setSelectedSection({
       groupName: sectionName,
@@ -138,7 +150,7 @@ export default function EsquemasConf() {
           <Loader />
         </div>
       )}
-      
+
       {error && (
         <div
           style={{
@@ -165,6 +177,7 @@ export default function EsquemasConf() {
           onLogout={handleLogout}
           onChangeView={handleOnChangeView}
           role={user?.role}
+          
         />
       </div>
 
@@ -184,7 +197,16 @@ export default function EsquemasConf() {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
           <Verification
             title="Elemento con hijos detectado"
-            message={`El elemento "${verificationData.element.name}" tiene ${verificationData.totalChildren} elementos hijos no seleccionados${verificationData.allChildren > verificationData.totalChildren ? ` (${verificationData.allChildren - verificationData.totalChildren} ya están seleccionados)` : ''}. ¿Desea agregar los elementos hijos faltantes también?`}
+            message={`El elemento "${verificationData.element.name}" tiene ${
+              verificationData.totalChildren
+            } elementos hijos no seleccionados${
+              verificationData.allChildren > verificationData.totalChildren
+                ? ` (${
+                    verificationData.allChildren -
+                    verificationData.totalChildren
+                  } ya están seleccionados)`
+                : ""
+            }. ¿Desea agregar los elementos hijos faltantes también?`}
             accept="Agregar todos los faltantes"
             cancel="Solo el seleccionado"
             onAccept={handleVerificationAccept}
@@ -261,6 +283,7 @@ export default function EsquemasConf() {
                     setSelectedElements={setSelectedElements}
                     setGlobalChanges={setGlobalChanges}
                     setLastActionMessage={setLastActionMessage}
+                    handleRefreshAfterUpdate={handleRefreshAfterUpdate}
                   />
                 </div>
               ) : (

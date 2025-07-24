@@ -48,7 +48,6 @@ const Header = ({ username, email, vista, onLogout, role, onChangeView }) => {
             </h1>
           </div>
         )}
-        {/* Lado Derecho: Información de Usuario */}
         <div className="relative flex items-center space-x-4">
           <div ref={avatarMenuRef}>
             <img

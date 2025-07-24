@@ -6,12 +6,10 @@ const ChangesPanel = ({
   hasGlobalChanges,
   getChangedElements,
   globalChanges,
-  selectedElements,
-  selectedSection,
-  getElementUniqueId,
   setSelectedElements,
   setGlobalChanges,
-  setLastActionMessage
+  setLastActionMessage,
+  handleRefreshAfterUpdate
 }) => {
   const handleUpdateBase = async () => {
     try {
@@ -35,6 +33,10 @@ const ChangesPanel = ({
       
       setLastActionMessage(`✅ ${result.message}`);
       setTimeout(() => setLastActionMessage(null), 5000);
+
+      if (handleRefreshAfterUpdate) {
+        handleRefreshAfterUpdate();
+      }
       
     } catch (error) {
       console.error("Error al guardar cambios:", error);
