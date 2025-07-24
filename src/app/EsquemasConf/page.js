@@ -28,11 +28,9 @@ export default function EsquemasConf() {
   const [selectedSection, setSelectedSection] = useState(null);
   const [showTreeView, setShowTreeView] = useState(false);
   const [baseData, setBaseData] = useState(null);
-  const [lastActionMessage, setLastActionMessage] = useState(null);
 
   const router = useRouter();
 
-  // Custom hooks
   const {
     user,
     showDeadToken,
@@ -76,7 +74,6 @@ export default function EsquemasConf() {
     getElementUniqueId,
     countElementChildren,
     countUnselectedChildren,
-    setLastActionMessage,
     selectedSection,
     markAsManualSelection,
     markAsAutomatedSelection
@@ -263,15 +260,6 @@ export default function EsquemasConf() {
                     <Button text="Ver Diagrama" onClick={handleShowTreeView} />
                   )}
 
-                  {/* Mensaje de última acción */}
-                  {lastActionMessage && (
-                    <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-sm text-green-800 font-medium">
-                        {lastActionMessage}
-                      </p>
-                    </div>
-                  )}
-
                   <ChangesPanel
                     hasChangesInBaseData={hasChangesInBaseData}
                     hasGlobalChanges={hasGlobalChanges}
@@ -282,7 +270,6 @@ export default function EsquemasConf() {
                     getElementUniqueId={getElementUniqueId}
                     setSelectedElements={setSelectedElements}
                     setGlobalChanges={setGlobalChanges}
-                    setLastActionMessage={setLastActionMessage}
                     handleRefreshAfterUpdate={handleRefreshAfterUpdate}
                   />
                 </div>

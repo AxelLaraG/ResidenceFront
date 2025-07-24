@@ -8,7 +8,6 @@ const ChangesPanel = ({
   globalChanges,
   setSelectedElements,
   setGlobalChanges,
-  setLastActionMessage,
   handleRefreshAfterUpdate
 }) => {
   const handleUpdateBase = async () => {
@@ -19,29 +18,18 @@ const ChangesPanel = ({
         automated: globalChanges.automated
       };
 
-      
-      setLastActionMessage("⏳ Guardando cambios en el servidor...");
-
-      // Enviar al backend
       const result = await updateBaseData(changesData);
       
-      
-      
-      // Limpiar los cambios después de guardar exitosamente
       setSelectedElements({});
       setGlobalChanges({ manual: [], automated: [] });
-      
-      setLastActionMessage(`✅ ${result.message}`);
-      setTimeout(() => setLastActionMessage(null), 5000);
+ 
 
       if (handleRefreshAfterUpdate) {
         handleRefreshAfterUpdate();
       }
       
     } catch (error) {
-      console.error("Error al guardar cambios:", error);
-      setLastActionMessage(`❌ Error al guardar: ${error.message}`);
-      setTimeout(() => setLastActionMessage(null), 5000);
+      throw new Error("Error al guardar cambios:", error);
     }
   };
 

@@ -7,7 +7,6 @@ export const useVerification = (
   getElementUniqueId,
   countElementChildren,
   countUnselectedChildren,
-  setLastActionMessage,
   selectedSection,
   markAsManualSelection,
   markAsAutomatedSelection
@@ -30,10 +29,7 @@ export const useVerification = (
         });
         setShowVerification(true);
         return;
-      } else {
-        setLastActionMessage(`✅ Elemento agregado: ${element.name} (todos sus hijos ya estaban seleccionados)`);
-        setTimeout(() => setLastActionMessage(null), 5000);
-      }
+      } 
     }
 
     // Si no tiene hijos, está desmarcando, o todos los hijos ya están seleccionados, proceder normalmente
@@ -154,8 +150,7 @@ export const useVerification = (
       markAsAutomatedSelection(automatedIds);
     }
     
-    setLastActionMessage(`✅ Se agregaron ${elementsAdded} elementos (${element.name} + ${elementsAdded - 1} hijos faltantes)`);
-    setTimeout(() => setLastActionMessage(null), 5000);
+    
     
     setSelectedElements(newSelectedElements);
     setShowVerification(false);
@@ -179,18 +174,12 @@ export const useVerification = (
       markAsManualSelection([uniqueId]);
     }
     
-    setLastActionMessage(`✅ Se agregó solo el elemento: ${element.name}`);
-    setTimeout(() => setLastActionMessage(null), 5000);
-    
     setShowVerification(false);
     setVerificationData(null);
   };
 
   // Manejar cierre de verificación
   const handleVerificationClose = () => {
-    
-    setLastActionMessage(`❌ Operación cancelada - no se agregó ningún elemento`);
-    setTimeout(() => setLastActionMessage(null), 3000);
     setShowVerification(false);
     setVerificationData(null);
   };
