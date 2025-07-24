@@ -58,7 +58,7 @@ export default function EsquemasConf() {
     markAsManualSelection,
     markAsAutomatedSelection,
     manualSelections,
-  } = useElementSelection(dataXSD, baseData, selectedSection);
+  } = useElementSelection(dataXSD, baseData, selectedSection, user?.institution);
 
   const {
     showVerification,
@@ -266,6 +266,7 @@ export default function EsquemasConf() {
                     setSelectedElements={setSelectedElements}
                     setGlobalChanges={setGlobalChanges}
                     handleRefreshAfterUpdate={handleRefreshAfterUpdate}
+                    user={user}
                   />
                 </div>
               ) : (

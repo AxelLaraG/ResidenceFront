@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export const useElementSelection = (dataXSD, baseData, selectedSection) => {
+export const useElementSelection = (dataXSD, baseData, selectedSection, userInstitute) => {
   const [selectedElements, setSelectedElements] = useState({});
   const [globalChanges, setGlobalChanges] = useState({
     added: [],
@@ -35,7 +35,7 @@ export const useElementSelection = (dataXSD, baseData, selectedSection) => {
         const elementUniqueId = getElementUniqueId(element);
         const baseUniqueId = baseElement.context.uniqueId;
 
-        return baseUniqueId === elementUniqueId;
+        return baseUniqueId === elementUniqueId && baseElement.context?.institution?.includes(userInstitute);
       })
     );
   };

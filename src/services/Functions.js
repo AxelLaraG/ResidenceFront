@@ -80,24 +80,28 @@ export const validateXML = async (formData) => {
 
 export const xsdToJson = async (opt) => {
   try {
-    const res = await apiClient.get("/api/xsd",{
-      params: { opt }  
+    const res = await apiClient.get("/api/xsd", {
+      params: { opt },
     });
     return res.data;
   } catch (error) {
     throw new Error("Error al convertir XSD a JSON");
   }
-}
+};
 
-export const updateBaseData = async (changesData) => {
+export const updateBaseData = async (changesData, institute) => {
   try {
-    const res = await apiClient.post("/api/update-base", changesData);
+    const res = await apiClient.post("/api/update-base", changesData, {
+      params: { institute }, // institute va como query parameter
+    });
     return res.data;
   } catch (error) {
     if (error.response) {
-      throw new Error(error.response.data.detail || "Error al actualizar la base de datos");
+      throw new Error(
+        error.response.data.detail || "Error al actualizar la base de datos"
+      );
     } else {
       throw new Error("Error al actualizar la base de datos");
     }
   }
-}
+};

@@ -9,6 +9,7 @@ const ChangesPanel = ({
   setSelectedElements,
   setGlobalChanges,
   handleRefreshAfterUpdate,
+  user
 }) => {
   const handleUpdateBase = async () => {
     try {
@@ -17,7 +18,7 @@ const ChangesPanel = ({
         automated: globalChanges.automated,
       };
 
-      const result = await updateBaseData(changesData);
+      const result = await updateBaseData(changesData,user?.institution);
 
       setSelectedElements({});
       setGlobalChanges({ manual: [], automated: [] });
