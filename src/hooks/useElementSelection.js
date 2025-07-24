@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 
-export const useElementSelection = (dataXSD, baseData, selectedSection, userInstitute) => {
+export const useElementSelection = (
+  dataXSD,
+  baseData,
+  selectedSection,
+  userInstitute
+) => {
   const [selectedElements, setSelectedElements] = useState({});
   const [globalChanges, setGlobalChanges] = useState({
     added: [],
@@ -35,7 +40,10 @@ export const useElementSelection = (dataXSD, baseData, selectedSection, userInst
         const elementUniqueId = getElementUniqueId(element);
         const baseUniqueId = baseElement.context.uniqueId;
 
-        return baseUniqueId === elementUniqueId && baseElement.context?.institution?.includes(userInstitute);
+        return (
+          baseUniqueId === elementUniqueId &&
+          baseElement.context?.institution?.includes(userInstitute)
+        );
       })
     );
   };
@@ -44,10 +52,10 @@ export const useElementSelection = (dataXSD, baseData, selectedSection, userInst
     const uniqueId = getElementUniqueId(element);
 
     if (selectedElements[uniqueId] !== undefined) {
-      return true;
+      return selectedElements[uniqueId] !== false;
     }
 
-    return false;
+    return isElementInBaseData(element);
   };
 
   const countElementChildren = (element) => {
@@ -167,6 +175,7 @@ export const useElementSelection = (dataXSD, baseData, selectedSection, userInst
       );
       const originallyInBase = isElementInBaseData(element);
 
+      // Solo agregar a "added" si NO estaba en la base Y ahora está seleccionado
       if (!originallyInBase && isSelected) {
         allAdded.push({
           name: element.name,
@@ -174,12 +183,16 @@ export const useElementSelection = (dataXSD, baseData, selectedSection, userInst
           uniqueId: selectedId,
         });
       } else if (originallyInBase && !isSelected) {
-        const naturalId = `${sectionName}_${element.name}`;
-        allRemoved.push({
-          name: element.name,
-          data: element,
-          uniqueId: naturalId,
-        });
+        const hasUserInteraction = Object.keys(selectedElements).length > 0;
+
+        if (hasUserInteraction) {
+          const naturalId = `${sectionName}_${element.name}`;
+          allRemoved.push({
+            name: element.name,
+            data: element,
+            uniqueId: naturalId,
+          });
+        }
       }
 
       if (element.children && element.children.length > 0) {
@@ -252,8 +265,13 @@ export const useElementSelection = (dataXSD, baseData, selectedSection, userInst
           });
         }
       } else if (originallyInBase && !currentlySelected) {
-        const uniqueId = getElementUniqueId(element);
-        removed.push({ name: element.name, data: element, uniqueId });
+        // Solo marcar como removido si hay interacción del usuario
+        const hasUserInteraction = Object.keys(selectedElements).length > 0;
+
+        if (hasUserInteraction) {
+          const uniqueId = getElementUniqueId(element);
+          removed.push({ name: element.name, data: element, uniqueId });
+        }
       }
     });
 

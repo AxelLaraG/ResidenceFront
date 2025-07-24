@@ -21,7 +21,7 @@ const ChangesPanel = ({
       const result = await updateBaseData(changesData,user?.institution);
 
       setSelectedElements({});
-      setGlobalChanges({ manual: [], automated: [] });
+      setGlobalChanges({ manual: [], automated: [], added: [], removed: [] });
 
       if (handleRefreshAfterUpdate) {
         handleRefreshAfterUpdate();
