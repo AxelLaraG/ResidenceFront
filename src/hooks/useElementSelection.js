@@ -41,7 +41,6 @@ export const useElementSelection = (dataXSD, baseData, selectedSection) => {
     );
   };
 
-  // Verificar si un elemento está seleccionado por ID único
   const isElementSelectedByUniqueId = (element) => {
     const uniqueId = getElementUniqueId(element);
 

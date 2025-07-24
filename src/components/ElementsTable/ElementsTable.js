@@ -1,12 +1,12 @@
 import Checkbox from "@/components/ui/CheckBox/CheckBox";
 
-const ElementsTable = ({ 
-  elements, 
+const ElementsTable = ({
+  elements,
   user,
   isElementSelectedByUniqueId,
   isElementInBaseData,
   getElementUniqueId,
-  handleCheckboxChange
+  handleCheckboxChange,
 }) => {
   return (
     <div className="overflow-x-auto">
@@ -47,9 +47,7 @@ const ElementsTable = ({
               <tr
                 key={i}
                 className={`hover:bg-gray-50 ${
-                  hasChanged
-                    ? "bg-yellow-50 border-l-4 border-yellow-400"
-                    : ""
+                  hasChanged ? "bg-yellow-50 border-l-4 border-yellow-400" : ""
                 }`}
               >
                 <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -143,9 +141,13 @@ const ElementsTable = ({
                     <Checkbox
                       id={`checkbox-${elementUniqueId}-${i}`}
                       checked={currentlySelected ? true : originallyInBase}
-                      onChange={(e) =>
-                        handleCheckboxChange(element, e.target.checked, element)
-                      }
+                      onChange={(e) => {
+                        handleCheckboxChange(
+                          element,
+                          e.target.checked,
+                          element
+                        );
+                      }}
                     />
                   </div>
                 </td>
