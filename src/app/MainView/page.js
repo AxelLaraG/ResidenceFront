@@ -25,7 +25,6 @@ export default function MainView() {
     stayOnline,
     handleDeadTokenCancel,
     handleLogout,
-    handleOnChangeView,
   } = useAuth(router);
 
   useEffect(() => {
@@ -54,7 +53,7 @@ export default function MainView() {
   const handleCustomChangeView = () => {
     setError(null);
     setLoading(true);
-    handleOnChangeView();
+    router.push("/EsquemasConf");
   };
 
   const handleCustomLogout = () => {
