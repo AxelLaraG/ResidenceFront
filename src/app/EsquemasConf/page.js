@@ -68,13 +68,11 @@ export default function EsquemasConf() {
     handleVerificationCancel,
     handleVerificationClose,
   } = useVerification(
-    dataXSD,
     selectedElements,
     setSelectedElements,
     getElementUniqueId,
     countElementChildren,
     countUnselectedChildren,
-    selectedSection,
     markAsManualSelection,
     markAsAutomatedSelection
   );
