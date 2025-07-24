@@ -62,7 +62,7 @@ export default function MainView() {
         const res = await validateXML(formData);
         setData(res);
       } catch (error) {
-        console.log("Error en la autenticación o carga de datos");
+        setError("Error en la autenticación o carga de datos");
       }
     };
 

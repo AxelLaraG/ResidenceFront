@@ -93,9 +93,9 @@ export default function EsquemasConf() {
 
         const baseDataResult = await xsdToJson("base");
         setBaseData(baseDataResult);
-        console.log("Base Data:", baseDataResult);
+        
       } catch (error) {
-        console.log(error);
+        
         setError("Error al cargar el XSD");
       } finally {
         setLoading(false);

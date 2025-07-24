@@ -19,13 +19,13 @@ const ChangesPanel = ({
         automated: globalChanges.automated
       };
 
-      console.log("Enviando cambios al servidor:", changesData);
+      
       setLastActionMessage("⏳ Guardando cambios en el servidor...");
 
       // Enviar al backend
       const result = await updateBaseData(changesData);
       
-      console.log("Respuesta del servidor:", result);
+      
       
       // Limpiar los cambios después de guardar exitosamente
       setSelectedElements({});

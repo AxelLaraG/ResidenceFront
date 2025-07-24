@@ -21,10 +21,6 @@ export const useVerification = (
       const totalChildren = countElementChildren(element);
       const unselectedChildren = countUnselectedChildren(element);
       
-      console.log(`Elemento con hijos detectado: ${element.name}`);
-      console.log(`  Total de hijos: ${totalChildren}`);
-      console.log(`  Hijos no seleccionados: ${unselectedChildren}`);
-      
       if (unselectedChildren > 0) {
         setVerificationData({
           element,
@@ -35,7 +31,6 @@ export const useVerification = (
         setShowVerification(true);
         return;
       } else {
-        console.log(`Todos los hijos de ${element.name} ya están seleccionados. Agregando solo el elemento padre.`);
         setLastActionMessage(`✅ Elemento agregado: ${element.name} (todos sus hijos ya estaban seleccionados)`);
         setTimeout(() => setLastActionMessage(null), 5000);
       }
@@ -60,11 +55,11 @@ export const useVerification = (
 
     const { element, elementData } = verificationData;
     const newSelectedElements = { ...selectedElements };
-    console.log(`Agregando elemento ${element.name} con los hijos faltantes`);
+    
 
     const mainElementId = getElementUniqueId(element);
     newSelectedElements[mainElementId] = element;
-    console.log(`  Agregado (principal): ${mainElementId}`);
+    
     let elementsAdded = 1;
     
     // Marcar el elemento principal como manual
@@ -136,13 +131,13 @@ export const useVerification = (
             }
             
             newSelectedElements[childId] = child;
-            console.log(`  Agregado (hijo): ${childId}`);
+            
             elementsAdded++;
             
             // Agregar a la lista de elementos automáticos
             automatedIds.push(childId);
           } else {
-            console.log(`  Omitido (ya seleccionado): ${child.name} con ID ${childId}`);
+            
           }
           
           if (!childIsAlreadySelected) {
@@ -173,7 +168,7 @@ export const useVerification = (
 
     const { element, elementData } = verificationData;
     const uniqueId = getElementUniqueId(element);
-    console.log(`Agregando solo el elemento: ${element.name} (${uniqueId})`);
+    
     setSelectedElements((prev) => ({
       ...prev,
       [uniqueId]: elementData,
@@ -193,7 +188,7 @@ export const useVerification = (
 
   // Manejar cierre de verificación
   const handleVerificationClose = () => {
-    console.log('Verificación cancelada - no se agregó ningún elemento');
+    
     setLastActionMessage(`❌ Operación cancelada - no se agregó ningún elemento`);
     setTimeout(() => setLastActionMessage(null), 3000);
     setShowVerification(false);

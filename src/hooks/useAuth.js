@@ -66,7 +66,8 @@ export const useAuth = (router) => {
         const usuario = await getCurrentUser();
         setUser(usuario);
       } catch (error) {
-        console.log(error);
+        console.error("Error al cargar el usuario:", error);
+        setUser(null);
       }
     };
     loadUser();

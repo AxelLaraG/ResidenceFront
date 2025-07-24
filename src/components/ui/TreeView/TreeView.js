@@ -65,7 +65,7 @@ const TreeNode = ({ element, level = 0, onNodeClick }) => {
 // Componente principal del árbol
 const TreeView = ({ data, selectedSection, isOpen, onClose }) => {
   const handleNodeClick = (element) => {
-    console.log('Clicked element:', element);
+    
     // Aquí puedes manejar la selección del elemento
   };
 

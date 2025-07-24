@@ -39,13 +39,9 @@ const ElementsTable = ({
         <tbody className="bg-white divide-y divide-gray-200">
           {elements.map((element, i) => {
             const currentlySelected = isElementSelectedByUniqueId(element);
-            const originallyInBase = isElementInBaseData(element.name);
+            const originallyInBase = isElementInBaseData(element);
             const hasChanged = currentlySelected !== originallyInBase;
             const elementUniqueId = getElementUniqueId(element);
-            
-            if (currentlySelected) {
-              console.log(`Elemento ${element.name} está seleccionado con ID: ${elementUniqueId}`);
-            }
 
             return (
               <tr
