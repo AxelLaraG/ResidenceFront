@@ -140,7 +140,7 @@ const ElementsTable = ({
                   <div className="flex justify-center">
                     <Checkbox
                       id={`checkbox-${elementUniqueId}-${i}`}
-                      checked={currentlySelected ? true : originallyInBase}
+                      checked={currentlySelected}
                       onChange={(e) => {
                         handleCheckboxChange(
                           element,

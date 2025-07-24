@@ -32,7 +32,7 @@ export const useVerification = (
     const uniqueId = getElementUniqueId(element);
     setSelectedElements((prev) => ({
       ...prev,
-      [uniqueId]: checked ? elementData : undefined,
+      [uniqueId]: checked ? elementData : false,
     }));
 
     if (checked) {
