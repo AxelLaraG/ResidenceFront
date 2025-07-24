@@ -1,33 +1,30 @@
 import Button from "@/components/ui/Button/Button";
 import { updateBaseData } from "@/services/Functions";
 
-const ChangesPanel = ({ 
+const ChangesPanel = ({
   hasChangesInBaseData,
   hasGlobalChanges,
   getChangedElements,
   globalChanges,
   setSelectedElements,
   setGlobalChanges,
-  handleRefreshAfterUpdate
+  handleRefreshAfterUpdate,
 }) => {
   const handleUpdateBase = async () => {
     try {
-      // Preparar los datos para enviar al backend
       const changesData = {
         manual: globalChanges.manual,
-        automated: globalChanges.automated
+        automated: globalChanges.automated,
       };
 
       const result = await updateBaseData(changesData);
-      
+
       setSelectedElements({});
       setGlobalChanges({ manual: [], automated: [] });
- 
 
       if (handleRefreshAfterUpdate) {
         handleRefreshAfterUpdate();
       }
-      
     } catch (error) {
       throw new Error("Error al guardar cambios:", error);
     }
@@ -40,7 +37,6 @@ const ChangesPanel = ({
 
   return (
     <>
-      {/* Panel de cambios en la sección actual */}
       {hasChangesInBaseData() && (
         <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <h4 className="text-sm font-medium text-blue-800 mb-2">
@@ -68,11 +64,11 @@ const ChangesPanel = ({
         </div>
       )}
 
-      {/* Panel de elementos agregados automáticamente */}
       {globalChanges.automated.length > 0 && (
         <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
           <h4 className="text-sm font-medium text-green-800 mb-2">
-            Elementos agregados automáticamente ({globalChanges.automated.length})
+            Elementos agregados automáticamente (
+            {globalChanges.automated.length})
           </h4>
           <div className="text-xs text-green-700">
             <p>
@@ -83,7 +79,6 @@ const ChangesPanel = ({
         </div>
       )}
 
-      {/* Panel de cambios globales */}
       {hasGlobalChanges() && (
         <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
           <h4 className="text-sm font-medium text-yellow-800 mb-2">
@@ -98,7 +93,8 @@ const ChangesPanel = ({
             )}
             <div className="mt-1 pt-1 border-t border-yellow-300">
               <strong>
-                Total de elementos: {globalChanges.manual.length + globalChanges.automated.length}
+                Total de elementos:{" "}
+                {globalChanges.manual.length + globalChanges.automated.length}
               </strong>
             </div>
           </div>

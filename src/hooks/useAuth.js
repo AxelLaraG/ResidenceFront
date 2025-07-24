@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { getCurrentUser, logout } from '@/services/Functions';
+import { useState, useEffect, useRef } from "react";
+import { getCurrentUser, logout } from "@/services/Functions";
 
 export const useAuth = (router) => {
   const [user, setUser] = useState(null);
@@ -7,7 +7,7 @@ export const useAuth = (router) => {
   const [deadTokenReason, setDeadTokenReason] = useState("");
   const [textToken, setTextToken] = useState("");
   const [stayOnline, setStayOnline] = useState(false);
-  
+
   const inactivityTimeout = useRef(null);
   const logoutTimeout = useRef(null);
   const sessionTimeout = useRef(null);

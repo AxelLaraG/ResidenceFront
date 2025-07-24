@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 export const useVerification = (
-  dataXSD,
   selectedElements,
   setSelectedElements,
   getElementUniqueId,
@@ -13,7 +12,6 @@ export const useVerification = (
   const [showVerification, setShowVerification] = useState(false);
   const [verificationData, setVerificationData] = useState(null);
 
-  // Manejar cambio de checkbox
   const handleCheckboxChange = (element, checked, elementData) => {
     if (checked && element.children && element.children.length > 0) {
       const totalChildren = countElementChildren(element);
@@ -31,20 +29,17 @@ export const useVerification = (
       }
     }
 
-    // Si no tiene hijos, está desmarcando, o todos los hijos ya están seleccionados, proceder normalmente
     const uniqueId = getElementUniqueId(element);
     setSelectedElements((prev) => ({
       ...prev,
       [uniqueId]: checked ? elementData : undefined,
     }));
 
-    // Marcar como selección manual solo si está marcando
     if (checked) {
       markAsManualSelection(uniqueId);
     }
   };
 
-  // Manejar aceptación de verificación
   const handleVerificationAccept = () => {
     if (!verificationData) return;
 
@@ -56,10 +51,8 @@ export const useVerification = (
 
     let elementsAdded = 1;
 
-    // Marcar el elemento principal como manual
     markAsManualSelection(mainElementId);
 
-    // Recopilar IDs de elementos automáticos
     const automatedIds = [];
 
     const addUnselectedChildren = (
@@ -107,7 +100,6 @@ export const useVerification = (
     setVerificationData(null);
   };
 
-  // Manejar cancelación de verificación
   const handleVerificationCancel = () => {
     if (!verificationData) return;
 
@@ -119,7 +111,6 @@ export const useVerification = (
       [uniqueId]: elementData,
     }));
 
-    // Marcar como selección manual
     if (markAsManualSelection) {
       markAsManualSelection([uniqueId]);
     }
@@ -128,7 +119,6 @@ export const useVerification = (
     setVerificationData(null);
   };
 
-  // Manejar cierre de verificación
   const handleVerificationClose = () => {
     setShowVerification(false);
     setVerificationData(null);

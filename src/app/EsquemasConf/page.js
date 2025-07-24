@@ -90,9 +90,7 @@ export default function EsquemasConf() {
 
         const baseDataResult = await xsdToJson("base");
         setBaseData(baseDataResult);
-        
       } catch (error) {
-        
         setError("Error al cargar el XSD");
       } finally {
         setLoading(false);
@@ -174,7 +172,6 @@ export default function EsquemasConf() {
           onLogout={handleLogout}
           onChangeView={handleOnChangeView}
           role={user?.role}
-          
         />
       </div>
 

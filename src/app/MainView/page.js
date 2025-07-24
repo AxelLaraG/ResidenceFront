@@ -1,58 +1,40 @@
 "use client";
 
-import {
-  fetchUserXML,
-  getCurrentUser,
-  validateXML,
-} from "@/services/Functions";
-import { useEffect, useRef, useState } from "react";
+import { fetchUserXML, validateXML } from "@/services/Functions";
+import { useEffect, useState } from "react";
 import Header from "@/components/ui/Header/Header";
 import { useRouter } from "next/navigation";
-import { logout } from "@/services/Functions";
 import ErrorCard from "@/components/ui/ErrorMessage/Error";
 import Loader from "@/components/ui/LoadPage/Load";
 import DeadToken from "@/components/ui/DeadToken/DeadToken";
 import Checkbox from "@/components/ui/CheckBox/CheckBox";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function MainView() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [showDeadToken, setShowDeadToken] = useState(false);
-  const [deadTokenReason, setDeadTokenReason] = useState("");
-  const [textToken, setTextToken] = useState("");
-  const [stayOnline, setStayOnline] = useState(false);
 
   const router = useRouter();
-  const inactivityTimeout = useRef(null);
-  const logoutTimeout = useRef(null);
-  const sessionTimeout = useRef(null);
+
+  const {
+    user,
+    showDeadToken,
+    deadTokenReason,
+    textToken,
+    stayOnline,
+    handleDeadTokenCancel,
+    handleLogout,
+    handleOnChangeView,
+  } = useAuth(router);
 
   useEffect(() => {
-    sessionTimeout.current = setTimeout(() => {
-      setDeadTokenReason("Sesión Expirada");
-      setTextToken("Su sesión ha expirado, por favor inicie sesión de nuevo");
-      setStayOnline(false);
-      setShowDeadToken(true);
-    }, 2 * 60 * 60 * 1000);
+    if (!user) return;
 
-    resetInactivityTimer();
-
-    const events = ["mousemove", "mousedown", "keydown", "touchstart"];
-    events.forEach((e) => {
-      window.addEventListener(e, resetInactivityTimer);
-    });
-  }, []);
-
-  useEffect(() => {
     setError(null);
     const fetchData = async () => {
       try {
-        const usuario = await getCurrentUser();
-        setUser(usuario);
-
-        const username = usuario.email.split("@")[0];
+        const username = user.email.split("@")[0];
         const xmlText = await fetchUserXML(username);
 
         const formData = new FormData();
@@ -67,45 +49,18 @@ export default function MainView() {
     };
 
     fetchData();
-  }, []);
+  }, [user]);
 
-  function resetInactivityTimer() {
-    clearTimeout(inactivityTimeout.current);
-    if (!showDeadToken) {
-      inactivityTimeout.current = setTimeout(() => {
-        setDeadTokenReason("¿Sigue ahí?");
-        setTextToken(
-          "Lleva 15 minutos inactivo; si no interactúa en 5 minutos, se cerrará la sesión automáticamente por seguridad"
-        );
-        setStayOnline(true);
-        setShowDeadToken(true);
-        // Timer de 5 minutos para logout automático si ignora el aviso
-        logoutTimeout.current = setTimeout(() => {
-          handleLogout();
-        }, 5 * 60 * 1000); // 5 minutos
-      }, 15 * 60 * 1000); // 15 minutos
-    }
-  }
-
-  const handleDeadTokenCancel = () => {
-    setShowDeadToken(false);
-    setDeadTokenReason("");
-    setTextToken("");
-    clearTimeout(logoutTimeout.current);
-    resetInactivityTimer();
-  };
-
-  const handleLogout = () => {
+  const handleCustomChangeView = () => {
     setError(null);
     setLoading(true);
-    const res = logout();
-    router.push("/");
+    handleOnChangeView();
   };
 
-  const handleOnChangeView = () =>{
+  const handleCustomLogout = () => {
     setError(null);
     setLoading(true);
-    router.push("/EsquemasConf")
+    handleLogout();
   };
 
   return (
@@ -137,9 +92,9 @@ export default function MainView() {
         username={data?.data?.cvu?.MiPerfil.Nombre}
         email={user?.email}
         vista="1"
-        onLogout={handleLogout}
+        onLogout={handleCustomLogout}
         role={user?.role}
-        onChangeView = {handleOnChangeView}
+        onChangeView={handleCustomChangeView}
       />
 
       {showDeadToken && (
@@ -148,7 +103,7 @@ export default function MainView() {
             title={deadTokenReason}
             message={textToken}
             stayOnline={stayOnline}
-            onLogout={handleLogout}
+            onLogout={handleCustomLogout}
             onCancel={handleDeadTokenCancel}
           />
         </div>

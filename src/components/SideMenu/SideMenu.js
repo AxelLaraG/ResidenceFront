@@ -1,12 +1,12 @@
 import Button from "@/components/ui/Button/Button";
 
-const SideMenu = ({ 
-  dataXSD, 
-  selectedSection, 
-  hasGlobalChanges, 
+const SideMenu = ({
+  dataXSD,
+  selectedSection,
+  hasGlobalChanges,
   globalChanges,
-  onSectionSelection, 
-  onChildrenSelection 
+  onSectionSelection,
+  onChildrenSelection,
 }) => {
   const getElementsWithChildren = () => {
     if (!dataXSD) return [];
@@ -65,7 +65,6 @@ const SideMenu = ({
           <p className="text-gray-500">Cargando elementos...</p>
         ) : (
           <div className="space-y-4">
-            {/* Secciones principales */}
             <div>
               <h3 className="text-sm font-medium text-gray-700 mb-2">
                 Secciones Principales
@@ -110,7 +109,9 @@ const SideMenu = ({
                         >
                           <Button
                             text={`${elementWithChildren.elementName}`}
-                            onClick={() => onChildrenSelection(elementWithChildren)}
+                            onClick={() =>
+                              onChildrenSelection(elementWithChildren)
+                            }
                           />
                         </div>
                       </div>
