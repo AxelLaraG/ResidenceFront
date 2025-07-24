@@ -16,6 +16,7 @@ const ChangesPanel = ({
       const changesData = {
         manual: globalChanges.manual,
         automated: globalChanges.automated,
+        removed: globalChanges.removed,
       };
 
       const result = await updateBaseData(changesData,user?.institution);
@@ -33,7 +34,7 @@ const ChangesPanel = ({
 
   const handleDiscardChanges = () => {
     setSelectedElements({});
-    setGlobalChanges({ manual: [], automated: [] });
+    setGlobalChanges({ manual: [], automated: [], removed:[] });
   };
 
   return (
@@ -95,7 +96,7 @@ const ChangesPanel = ({
             <div className="mt-1 pt-1 border-t border-yellow-300">
               <strong>
                 Total de elementos:{" "}
-                {globalChanges.manual.length + globalChanges.automated.length}
+                {globalChanges.manual.length + globalChanges.automated.length + globalChanges.removed.length}
               </strong>
             </div>
           </div>
