@@ -91,6 +91,9 @@ export const xsdToJson = async (opt) => {
 
 export const updateBaseData = async (changesData, institute) => {
   try {
+    console.log(
+      `Recibiendo cambios para actualizar la base de datos: ${JSON.stringify(changesData)}`
+    );
     const res = await apiClient.post("/api/update-base", changesData, {
       params: { institute }, // institute va como query parameter
     });

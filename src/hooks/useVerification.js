@@ -106,13 +106,15 @@ export const useVerification = (
     const { element, elementData } = verificationData;
     const uniqueId = getElementUniqueId(element);
 
+    const { children, ...elementWithoutChildren } = elementData;
+
     setSelectedElements((prev) => ({
       ...prev,
-      [uniqueId]: elementData,
+      [uniqueId]: elementWithoutChildren,
     }));
 
     if (markAsManualSelection) {
-      markAsManualSelection([uniqueId]);
+      markAsManualSelection(uniqueId);
     }
 
     setShowVerification(false);
