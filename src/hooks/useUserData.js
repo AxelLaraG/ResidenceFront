@@ -1,0 +1,102 @@
+import { useState, useEffect } from "react";
+import { fetchUserXML, validateXML, xsdToJson, updateSharingAPI } from "@/services/Functions";
+
+export const useUserData = (user) => {
+  const [displayData, setDisplayData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const loadAllData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const baseConfig = await xsdToJson("base");
+        const username = user.email.split("@")[0];
+        const xmlText = await fetchUserXML(username);
+        const formData = new FormData();
+        const xmlBlob = new Blob([xmlText], { type: "text/xml" });
+        formData.append("documento_xml", xmlBlob, `${username}.xml`);
+        const validationResult = await validateXML(formData);
+
+        // Procesar y combinar los datos
+        const processedData = {};
+        const allInstitutions = ["PRODEP", "TecNM"];
+        const baseMap = new Map();
+
+        Object.values(baseConfig).forEach((section) => {
+          section.forEach((element) => {
+            baseMap.set(
+              element.context.uniqueId,
+              element.context.institution || []
+            );
+          });
+        });
+
+        const processNode = (node, path) => {
+          if (typeof node !== "object" || node === null) return;
+          for (const key in node) {
+            if (key === "@attributes") continue;
+
+            const currentPath = [...path, key];
+            const uniqueId = currentPath.join("_");
+            const children = node[key];
+
+            if (baseMap.has(uniqueId)) {
+              const sectionName = currentPath[1];
+              if (!processedData[sectionName]) {
+                processedData[sectionName] = [];
+              }
+              processedData[sectionName].push({
+                uniqueId,
+                label: key,
+                value: children,
+                sharedWith: baseMap.get(uniqueId),
+                allInstitutions,
+              });
+            }
+            if (typeof children === "object") {
+              processNode(children, currentPath);
+            }
+          }
+        };
+
+        const rootKey = Object.keys(validationResult.data)[0];
+        processNode(validationResult.data[rootKey], [rootKey]);
+        setDisplayData(processedData);
+      } catch (e) {
+        setError("Error al cargar los datos: " + e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAllData();
+  }, [user]);
+
+  const updateSharing = async (uniqueId, newInstitutions) => {
+    try {
+      await updateSharingAPI(uniqueId, newInstitutions);
+
+      setDisplayData((prevData) => {
+        const newData = JSON.parse(JSON.stringify(prevData));
+        for (const section in newData) {
+          const item = newData[section].find((i) => i.uniqueId === uniqueId);
+          if (item) {
+            item.sharedWith = newInstitutions;
+            break;
+          }
+        }
+        return newData;
+      });
+    } catch (err) {
+      console.error("Error al actualizar los permisos:", err);
+      setError("No se pudieron guardar los cambios. Inténtalo de nuevo.");
+    }
+  };
+
+  return { displayData, loading, error, updateSharing };
+};

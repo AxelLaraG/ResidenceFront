@@ -108,3 +108,21 @@ export const updateBaseData = async (changesData, institute) => {
     }
   }
 };
+
+export const updateSharingAPI = async (uniqueId, institutions) => {
+  try {
+    const res = await apiClient.post("/api/update-sharing", {
+      uniqueId,
+      institutions,
+    });
+    return res.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(
+        error.response.data.detail || "Error al actualizar los permisos"
+      );
+    } else {
+      throw new Error("Error al actualizar los permisos");
+    }
+  }
+};
