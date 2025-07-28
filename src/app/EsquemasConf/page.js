@@ -58,7 +58,12 @@ export default function EsquemasConf() {
     markAsManualSelection,
     markAsAutomatedSelection,
     manualSelections,
-  } = useElementSelection(dataXSD, baseData, selectedSection, user?.institution);
+  } = useElementSelection(
+    dataXSD,
+    baseData,
+    selectedSection,
+    user?.institution
+  );
 
   const {
     showVerification,
@@ -97,16 +102,14 @@ export default function EsquemasConf() {
     loadXSD();
   }, []);
 
-  // Section handlers
-  const handleChildrenSelection = (elementWithChildren) => {
-    setSelectedSection({
-      groupName: `${elementWithChildren.elementName} (de ${elementWithChildren.parentSection})`,
-      elements: elementWithChildren.children,
-      parentInfo: {
-        section: elementWithChildren.parentSection,
-        element: elementWithChildren.elementName,
-      },
-    });
+  const handleNodeSelect = (node, path) => {
+    if (node.children && node.children.length > 0) {
+      setSelectedSection({
+        groupName: node.name,
+        elements: node.children,
+        fullPath: path,
+      });
+    }
   };
 
   const handleRefreshAfterUpdate = async () => {
@@ -119,13 +122,6 @@ export default function EsquemasConf() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSectionSelection = (sectionName) => {
-    setSelectedSection({
-      groupName: sectionName,
-      elements: dataXSD[sectionName],
-    });
   };
 
   const handleShowTreeView = () => {
@@ -200,9 +196,9 @@ export default function EsquemasConf() {
                 : ""
             }. ¿Desea agregar los elementos hijos faltantes también?`}
             accept="Agregar todos los faltantes"
-            cancel="Solo el seleccionado"
+            cancel="Cancelar"
             onAccept={handleVerificationAccept}
-            onCancel={handleVerificationCancel}
+            onCancel={handleVerificationClose}
             onClose={handleVerificationClose}
           />
         </div>
@@ -214,10 +210,7 @@ export default function EsquemasConf() {
           <SideMenu
             dataXSD={dataXSD}
             selectedSection={selectedSection}
-            hasGlobalChanges={hasGlobalChanges}
-            globalChanges={globalChanges}
-            onSectionSelection={handleSectionSelection}
-            onChildrenSelection={handleChildrenSelection}
+            onNodeSelect={handleNodeSelect}
           />
 
           {/* Contenido principal */}

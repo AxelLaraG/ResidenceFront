@@ -20,16 +20,16 @@ export const useElementSelection = (
       return `${parentContext}_${element.name}`;
     }
 
+    if (selectedSection?.parentInfo?.fullPath) {
+      const parentPath = selectedSection.parentInfo.fullPath.join("_");
+      return `${parentPath}_${element.name}`;
+    }
+
     if (selectedSection && !selectedSection.parentInfo) {
       return `${selectedSection.groupName}_${element.name}`;
     }
 
-    if (selectedSection && selectedSection.parentInfo) {
-      return `${selectedSection.parentInfo.section.replace(/ → /g, "_")}_${
-        selectedSection.parentInfo.element
-      }_${element.name}`;
-    }
-
+    // Fallback por si acaso.
     return element.name;
   };
 
@@ -122,7 +122,6 @@ export const useElementSelection = (
   };
 
   const updateGlobalChanges = () => {
-    // Asegurarse de que los datos estén cargados antes de calcular
     if (!dataXSD || !baseData) {
       setGlobalChanges({ added: [], removed: [], manual: [], automated: [] });
       return;
@@ -131,7 +130,6 @@ export const useElementSelection = (
     const allAdded = [];
     const allRemoved = [];
 
-    // Función auxiliar para buscar si un elemento está en la base de datos por su ID único
     const findInBaseData = (uniqueId) => {
       for (const section of Object.values(baseData)) {
         const found = section.find(
@@ -144,29 +142,22 @@ export const useElementSelection = (
       return false;
     };
 
-    // Función recursiva que atraviesa todos los elementos y construye su uniqueId
     const checkElement = (element, path) => {
-      // El uniqueId se construye a partir de la ruta completa del elemento
       const uniqueId = [...path, element.name].join("_");
 
       const originallyInBase = findInBaseData(uniqueId);
       const selectionState = selectedElements[uniqueId];
 
-      // Un elemento está seleccionado si está marcado explícitamente,
-      // o si estaba en la base y no ha sido desmarcado explícitamente.
       const currentlySelected =
         selectionState === undefined ? originallyInBase : !!selectionState;
 
-      // Se agrega si NO estaba en la base y AHORA está seleccionado
       if (!originallyInBase && currentlySelected) {
         allAdded.push({
           name: element.name,
           data: selectedElements[uniqueId] || element,
           uniqueId: uniqueId,
         });
-      }
-      // Se remueve si ESTABA en la base y AHORA está deseleccionado (false)
-      else if (originallyInBase && selectionState === false) {
+      } else if (originallyInBase && selectionState === false) {
         allRemoved.push({
           name: element.name,
           data: element,
@@ -174,7 +165,6 @@ export const useElementSelection = (
         });
       }
 
-      // Llamada recursiva para los hijos
       if (element.children && element.children.length > 0) {
         element.children.forEach((child) => {
           checkElement(child, [...path, element.name]);
@@ -182,14 +172,12 @@ export const useElementSelection = (
       }
     };
 
-    // Iniciar el recorrido desde las secciones principales
     Object.keys(dataXSD).forEach((sectionName) => {
       dataXSD[sectionName].forEach((element) => {
         checkElement(element, [sectionName]);
       });
     });
 
-    // Clasificar los elementos agregados como manuales o automáticos
     const manualAdded = [];
     const automatedAdded = [];
 
