@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import { fetchUserXML, validateXML, xsdToJson, updateSharingAPI } from "@/services/Functions";
+import {
+  fetchUserXML,
+  validateXML,
+  xsdToJson,
+  updateSharingAPI,
+} from "@/services/Functions";
 
 export const useUserData = (user) => {
   const [displayData, setDisplayData] = useState(null);
@@ -22,7 +27,6 @@ export const useUserData = (user) => {
         formData.append("documento_xml", xmlBlob, `${username}.xml`);
         const validationResult = await validateXML(formData);
 
-        // Procesar y combinar los datos
         const processedData = {};
         const allInstitutions = ["PRODEP", "TecNM"];
         const baseMap = new Map();
@@ -37,30 +41,47 @@ export const useUserData = (user) => {
         });
 
         const processNode = (node, path) => {
+          if (Array.isArray(node)) {
+            node.forEach((item, index) => processNode(item, [...path, index]));
+            return;
+          }
+
           if (typeof node !== "object" || node === null) return;
+
           for (const key in node) {
             if (key === "@attributes") continue;
 
             const currentPath = [...path, key];
-            const uniqueId = currentPath.join("_");
+            const uniqueIdWithIndex = currentPath.join("_");
+
+            const genericUniqueId = currentPath
+              .filter((p) => isNaN(parseInt(p, 10)))
+              .join("_");
+
             const children = node[key];
 
-            if (baseMap.has(uniqueId)) {
+            if (baseMap.has(genericUniqueId)) {
               const sectionName = currentPath[1];
               if (!processedData[sectionName]) {
                 processedData[sectionName] = [];
               }
-              processedData[sectionName].push({
-                uniqueId,
-                label: key,
-                value: children,
-                sharedWith: baseMap.get(uniqueId),
-                allInstitutions,
-              });
+
+              if (
+                !processedData[sectionName].some(
+                  (el) => el.uniqueId === uniqueIdWithIndex
+                )
+              ) {
+                processedData[sectionName].push({
+                  uniqueId: uniqueIdWithIndex, 
+                  label: key,
+                  value: children,
+                  sharedWith: baseMap.get(genericUniqueId),
+                  allInstitutions,
+                });
+              }
             }
-            if (typeof children === "object") {
-              processNode(children, currentPath);
-            }
+
+            processNode(children, currentPath);
           }
         };
 
