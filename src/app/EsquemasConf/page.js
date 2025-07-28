@@ -103,13 +103,11 @@ export default function EsquemasConf() {
   }, []);
 
   const handleNodeSelect = (node, path) => {
-    if (node.children && node.children.length > 0) {
-      setSelectedSection({
-        groupName: node.name,
-        elements: node.children,
-        fullPath: path,
-      });
-    }
+    setSelectedSection({
+      groupName: node.name,
+      elements: node.children || [],
+      fullPath: path,
+    });
   };
 
   const handleRefreshAfterUpdate = async () => {

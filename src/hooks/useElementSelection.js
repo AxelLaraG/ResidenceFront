@@ -20,16 +20,11 @@ export const useElementSelection = (
       return `${parentContext}_${element.name}`;
     }
 
-    if (selectedSection?.parentInfo?.fullPath) {
-      const parentPath = selectedSection.parentInfo.fullPath.join("_");
-      return `${parentPath}_${element.name}`;
+    if (selectedSection?.fullPath) {
+      const basePath = selectedSection.fullPath.join("_");
+      return `${basePath}_${element.name}`;
     }
 
-    if (selectedSection && !selectedSection.parentInfo) {
-      return `${selectedSection.groupName}_${element.name}`;
-    }
-
-    // Fallback por si acaso.
     return element.name;
   };
 
