@@ -33,7 +33,6 @@ const Header = ({ username, email, vista, onLogout, role, onChangeView }) => {
   return (
     <header className="bg-white shadow-md p-4 flex justify-between items-center rounded-lg relative">
       <div className="w-full max-w-3xl mx-auto flex justify-between items-center">
-        {/* Lado Izquierdo: Saludo y Menú Móvil */}
         {vista === "1" && (
           <div className="flex items-center">
             <h1 className="text-xl md:text-2xl font-semibold text-gray-800">

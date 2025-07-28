@@ -36,6 +36,10 @@ export default function MainView() {
     }
   };
 
+  const handleNodeSelect = (node, path) => {
+    handleSectionSelection(node.name);
+  };
+
   return (
     <div>
       {loading && (
@@ -85,10 +89,7 @@ export default function MainView() {
           <SideMenu
             dataXSD={displayData}
             selectedSection={selectedSection}
-            onSectionSelection={handleSectionSelection}
-            onChildrenSelection={() => {}}
-            hasGlobalChanges={() => false}
-            globalChanges={{}}
+            onNodeSelect={handleNodeSelect}
           />
           <div className="flex-1 overflow-y-auto p-6">
             {selectedSection ? (
