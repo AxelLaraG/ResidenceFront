@@ -8,7 +8,12 @@ const renderValue = (value) => {
   return String(value);
 };
 
-const UserDataTable = ({ sectionData, onSharingChange }) => {
+const UserDataTable = ({
+  sectionData,
+  onSharingChange,
+  onElementSelect,
+  selectedElements,
+}) => {
   if (!sectionData || sectionData.length === 0) {
     return (
       <p className="text-gray-500 p-4">
@@ -28,31 +33,37 @@ const UserDataTable = ({ sectionData, onSharingChange }) => {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {sectionData.map((item) => (
-            <tr key={item.uniqueId}>
-              <td className="p-3 align-top font-medium text-gray-800">
-                <div className="flex justify-center">{item.label}</div>
-              </td>
-              <td className="p-3 align-top text-gray-600">
-                <div className="flex justify-center">
-                  <pre className="whitespace-pre-wrap font-sans">
-                    {renderValue(item.value)}
-                  </pre>
-                </div>
-              </td>
-              <td className="px-4 py-2 text-sm ">
-                <div className="flex justify-center">
-                  <Checkbox
-                    id={`checkbox-${item.uniqueId}`}
-                    checked={false}
-                    onChange={(e) => {
-                      handleCheckboxChange(element, e.target.checked, element);
-                    }}
-                  />
-                </div>
-              </td>
-            </tr>
-          ))}
+          {sectionData.map((item) => {
+            const isSelected = !!selectedElements[item.uniqueId];
+            return (
+              <tr
+                key={item.uniqueId}
+                className={isSelected ? "bg-blue-50" : "hover:bg-gray-50"}
+              >
+                <td className="p-3 align-top font-medium text-gray-800">
+                  <div className="flex justify-center">{item.label}</div>
+                </td>
+                <td className="p-3 align-top text-gray-600">
+                  <div className="flex justify-center">
+                    <pre className="whitespace-pre-wrap font-sans">
+                      {renderValue(item.value)}
+                    </pre>
+                  </div>
+                </td>
+                <td className="px-4 py-2 text-sm ">
+                  <div className="flex justify-center">
+                    <Checkbox
+                      id={`checkbox-${item.uniqueId}`}
+                      checked={isSelected}
+                      onChange={(e) => {
+                        onElementSelect(item, e.target.checked);
+                      }}
+                    />
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

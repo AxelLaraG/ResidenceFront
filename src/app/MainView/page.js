@@ -8,11 +8,13 @@ import Loader from "@/components/ui/LoadPage/Load";
 import DeadToken from "@/components/ui/DeadToken/DeadToken";
 import SideMenu from "@/components/SideMenu/SideMenu";
 import UserDataTable from "@/components/ui/UserDataTable/UserDataTable";
+import Button from "@/components/ui/Button/Button";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserData } from "@/hooks/useUserData";
 
 export default function MainView() {
   const [selectedSection, setSelectedSection] = useState(null);
+  const [selectedElements, setSelectedElements] = useState({}); // Cambiado para selección múltiple
   const router = useRouter();
 
   const {
@@ -33,12 +35,37 @@ export default function MainView() {
         groupName: sectionName,
         elements: displayData[sectionName],
       });
+      setSelectedElements({}); // Resetea la selección al cambiar de sección
     }
   };
 
   const handleNodeSelect = (node, path) => {
     handleSectionSelection(node.name);
   };
+
+  const handleElementSelect = (element, isSelected) => {
+    setSelectedElements((prev) => {
+      const newSelected = { ...prev };
+      if (isSelected) {
+        newSelected[element.uniqueId] = element;
+      } else {
+        delete newSelected[element.uniqueId];
+      }
+      return newSelected;
+    });
+  };
+
+  const getSelectedInstitutions = () => {
+    const institutions = new Set();
+    Object.values(selectedElements).forEach((element) => {
+      if (element.sharedWith) {
+        element.sharedWith.forEach((inst) => institutions.add(inst));
+      }
+    });
+    return Array.from(institutions);
+  };
+
+  const selectedInstitutions = getSelectedInstitutions();
 
   return (
     <div>
@@ -100,7 +127,26 @@ export default function MainView() {
                 <UserDataTable
                   sectionData={selectedSection.elements}
                   onSharingChange={updateSharing}
+                  onElementSelect={handleElementSelect}
+                  selectedElements={selectedElements}
                 />
+                {selectedInstitutions.length > 0 && (
+                  <div className="mt-4 flex gap-4">
+                    {selectedInstitutions.map((institution) => (
+                      <Button
+                        key={institution}
+                        text={`Enviar a ${institution}`}
+                        onClick={() =>
+                          console.log(
+                            `Enviando ${Object.values(selectedElements)
+                              .map((el) => el.label)
+                              .join(", ")} a ${institution}`
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-12 text-gray-500">
