@@ -53,14 +53,27 @@ export const useUserData = (user) => {
 
             const currentPath = [...path, key];
             const uniqueIdWithIndex = currentPath.join("_");
-
             const genericUniqueId = currentPath
               .filter((p) => isNaN(parseInt(p, 10)))
               .join("_");
+            let value = node[key];
 
-            const children = node[key];
+            let isLeafNode = false;
 
-            if (baseMap.has(genericUniqueId)) {
+            if (typeof value === "object" && value !== null && value["#text"]) {
+              const otherKeys = Object.keys(value).filter(
+                (k) => k !== "#text" && k !== "@attributes"
+              );
+              if (otherKeys.length === 0) {
+                value = value["#text"];
+              }
+            }
+
+            if (typeof value !== "object" || value === null) {
+              isLeafNode = true;
+            }
+
+            if (isLeafNode && baseMap.has(genericUniqueId)) {
               const sectionName = currentPath[1];
               if (!processedData[sectionName]) {
                 processedData[sectionName] = [];
@@ -72,16 +85,18 @@ export const useUserData = (user) => {
                 )
               ) {
                 processedData[sectionName].push({
-                  uniqueId: uniqueIdWithIndex, 
+                  uniqueId: uniqueIdWithIndex,
                   label: key,
-                  value: children,
+                  value: value,
                   sharedWith: baseMap.get(genericUniqueId),
                   allInstitutions,
                 });
               }
             }
 
-            processNode(children, currentPath);
+            if (typeof node[key] === "object" && node[key] !== null) {
+              processNode(node[key], currentPath);
+            }
           }
         };
 
