@@ -274,54 +274,49 @@ export const useElementSelection = (
     const pathParts = elementId.split("_");
     const parentUpdates = {};
 
-    const findElementInDataXSD = (targetPath) => {
-      const [sectionName, ...elementPath] = targetPath;
+    const findNode = (path) => {
+      const sectionName = path[0];
+      const section = dataXSD[sectionName];
+      if (!section) return null;
 
-      if (!dataXSD[sectionName]) return null;
-
-      let currentLevel = dataXSD[sectionName];
-      let foundElement = null;
-
-      if (elementPath.length === 0) {
-        return { name: sectionName, children: currentLevel };
+      if (path.length === 1) {
+        return { name: sectionName, children: section };
       }
 
-      for (let i = 0; i < elementPath.length; i++) {
-        const targetName = elementPath[i];
-
-        if (Array.isArray(currentLevel)) {
-          foundElement = currentLevel.find((item) => item.name === targetName);
-        } else if (currentLevel.children) {
-          foundElement = currentLevel.children.find(
-            (item) => item.name === targetName
-          );
+      let currentChildren = section;
+      let foundNode = null;
+      for (let i = 1; i < path.length; i++) {
+        foundNode = currentChildren.find((node) => node.name === path[i]);
+        if (foundNode) {
+          currentChildren = foundNode.children || [];
+        } else {
+          return null;
         }
-
-        if (!foundElement) break;
-
-        if (i === elementPath.length - 1) {
-          return foundElement;
-        }
-
-        currentLevel = foundElement;
       }
-
-      return foundElement;
+      return foundNode;
     };
 
     for (let i = pathParts.length - 1; i > 0; i--) {
       const parentPath = pathParts.slice(0, i);
       const parentId = parentPath.join("_");
 
-      const parentElement = findElementInDataXSD(parentPath);
+      const parentNode = findNode(parentPath);
 
-      if (parentElement) {
-        parentUpdates[parentId] = true;
+      if (parentNode) {
+        parentUpdates[parentId] = parentNode;
       }
     }
 
     if (Object.keys(parentUpdates).length > 0) {
-      setSelectedElements((prev) => ({ ...prev, ...parentUpdates }));
+      setSelectedElements((prev) => {
+        const newSelected = { ...prev };
+        for (const id in parentUpdates) {
+          if (newSelected[id] !== false) {
+            newSelected[id] = parentUpdates[id];
+          }
+        }
+        return newSelected;
+      });
     }
   };
 
