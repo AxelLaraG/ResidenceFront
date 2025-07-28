@@ -251,6 +251,23 @@ export const useElementSelection = (
 
   const markAsAutomatedSelection = (uniqueIds) => {};
 
+  const getDescendantIds = (element, parentPath) => {
+    let ids = [];
+    if (!element.children || element.children.length === 0) {
+      return [];
+    }
+
+    element.children.forEach((child) => {
+      const childId = [...parentPath, element.name, child.name].join("_");
+      ids.push(childId);
+
+      const childParentPath = [...parentPath, element.name];
+      ids = ids.concat(getDescendantIds(child, childParentPath));
+    });
+
+    return ids;
+  };
+
   useEffect(() => {
     updateGlobalChanges();
   }, [selectedElements, dataXSD, baseData, manualSelections]);
@@ -271,5 +288,6 @@ export const useElementSelection = (
     markAsManualSelection,
     markAsAutomatedSelection,
     manualSelections,
+    getDescendantIds,
   };
 };

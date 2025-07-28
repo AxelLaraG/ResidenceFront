@@ -58,6 +58,7 @@ export default function EsquemasConf() {
     markAsManualSelection,
     markAsAutomatedSelection,
     manualSelections,
+    getDescendantIds,
   } = useElementSelection(
     dataXSD,
     baseData,
@@ -72,6 +73,11 @@ export default function EsquemasConf() {
     handleVerificationAccept,
     handleVerificationCancel,
     handleVerificationClose,
+    // Añade los nuevos estados y manejadores
+    showDeselectVerification,
+    deselectVerificationData,
+    handleDeselectAccept,
+    handleDeselectCancel,
   } = useVerification(
     selectedElements,
     setSelectedElements,
@@ -79,7 +85,8 @@ export default function EsquemasConf() {
     countElementChildren,
     countUnselectedChildren,
     markAsManualSelection,
-    markAsAutomatedSelection
+    markAsAutomatedSelection,
+    getDescendantIds
   );
 
   // Load XSD data
@@ -198,6 +205,20 @@ export default function EsquemasConf() {
             onAccept={handleVerificationAccept}
             onCancel={handleVerificationClose}
             onClose={handleVerificationClose}
+          />
+        </div>
+      )}
+
+      {showDeselectVerification && deselectVerificationData && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <Verification
+            title="Confirmar Deselección"
+            message={`Si desmarca este elemento, se desmarcarán otros ${deselectVerificationData.count} elementos hijos. ¿Desea continuar?`}
+            accept="Aceptar"
+            cancel="Cancelar"
+            onAccept={handleDeselectAccept}
+            onCancel={handleDeselectCancel}
+            onClose={handleDeselectCancel}
           />
         </div>
       )}

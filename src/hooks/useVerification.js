@@ -7,37 +7,77 @@ export const useVerification = (
   countElementChildren,
   countUnselectedChildren,
   markAsManualSelection,
-  markAsAutomatedSelection
+  markAsAutomatedSelection,
+  getDescendantIds
 ) => {
   const [showVerification, setShowVerification] = useState(false);
   const [verificationData, setVerificationData] = useState(null);
+  const [showDeselectVerification, setShowDeselectVerification] =
+    useState(false);
+  const [deselectVerificationData, setDeselectVerificationData] =
+    useState(null);
 
   const handleCheckboxChange = (element, checked, elementData) => {
-    if (checked && element.children && element.children.length > 0) {
-      const totalChildren = countElementChildren(element);
-      const unselectedChildren = countUnselectedChildren(element);
-
-      if (unselectedChildren > 0) {
-        setVerificationData({
-          element,
-          elementData,
-          totalChildren: unselectedChildren,
-          allChildren: totalChildren,
-        });
-        setShowVerification(true);
-        return;
-      }
-    }
-
     const uniqueId = getElementUniqueId(element);
-    setSelectedElements((prev) => ({
-      ...prev,
-      [uniqueId]: checked ? elementData : false,
-    }));
 
     if (checked) {
+      if (element.children && element.children.length > 0) {
+        const totalChildren = countElementChildren(element);
+        const unselectedChildren = countUnselectedChildren(element);
+        if (unselectedChildren > 0) {
+          setVerificationData({
+            element,
+            elementData,
+            totalChildren: unselectedChildren,
+            allChildren: totalChildren,
+          });
+          setShowVerification(true);
+          return;
+        }
+      }
+      setSelectedElements((prev) => ({ ...prev, [uniqueId]: elementData }));
       markAsManualSelection(uniqueId);
+      return;
     }
+
+    if (!checked) {
+      const uniqueId = getElementUniqueId(element);
+      const parentPath = uniqueId.split("_").slice(0, -1);
+      const descendantIds = getDescendantIds(element, parentPath);
+      const selectedDescendants = descendantIds.filter(
+        (id) => selectedElements[id]
+      );
+
+      if (selectedDescendants.length > 0) {
+        setDeselectVerificationData({
+          element,
+          descendantIds: [uniqueId, ...selectedDescendants],
+          count: selectedDescendants.length,
+        });
+        setShowDeselectVerification(true);
+      } else {
+        setSelectedElements((prev) => ({ ...prev, [uniqueId]: false }));
+      }
+    }
+  };
+
+  const handleDeselectAccept = () => {
+    if (!deselectVerificationData) return;
+    const { descendantIds } = deselectVerificationData;
+
+    const updates = {};
+    descendantIds.forEach((id) => {
+      updates[id] = false;
+    });
+
+    setSelectedElements((prev) => ({ ...prev, ...updates }));
+    setShowDeselectVerification(false);
+    setDeselectVerificationData(null);
+  };
+
+  const handleDeselectCancel = () => {
+    setShowDeselectVerification(false);
+    setDeselectVerificationData(null);
   };
 
   const handleVerificationAccept = () => {
@@ -133,5 +173,9 @@ export const useVerification = (
     handleVerificationAccept,
     handleVerificationCancel,
     handleVerificationClose,
+    showDeselectVerification,
+    deselectVerificationData,
+    handleDeselectAccept,
+    handleDeselectCancel,
   };
 };
