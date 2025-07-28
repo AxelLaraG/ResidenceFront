@@ -59,6 +59,7 @@ export default function EsquemasConf() {
     markAsAutomatedSelection,
     manualSelections,
     getDescendantIds,
+    selectParents,
   } = useElementSelection(
     dataXSD,
     baseData,
@@ -86,10 +87,10 @@ export default function EsquemasConf() {
     countUnselectedChildren,
     markAsManualSelection,
     markAsAutomatedSelection,
-    getDescendantIds
+    getDescendantIds,
+    selectParents
   );
 
-  // Load XSD data
   useEffect(() => {
     const loadXSD = async () => {
       try {

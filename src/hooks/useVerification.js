@@ -8,7 +8,8 @@ export const useVerification = (
   countUnselectedChildren,
   markAsManualSelection,
   markAsAutomatedSelection,
-  getDescendantIds
+  getDescendantIds,
+  selectParents,
 ) => {
   const [showVerification, setShowVerification] = useState(false);
   const [verificationData, setVerificationData] = useState(null);
@@ -37,6 +38,7 @@ export const useVerification = (
       }
       setSelectedElements((prev) => ({ ...prev, [uniqueId]: elementData }));
       markAsManualSelection(uniqueId);
+      selectParents(uniqueId);
       return;
     }
 
@@ -86,6 +88,8 @@ export const useVerification = (
     const { element } = verificationData;
     const newSelectedElements = { ...selectedElements };
     const mainElementId = getElementUniqueId(element);
+
+    selectParents(mainElementId);
 
     newSelectedElements[mainElementId] = element;
 
@@ -146,6 +150,8 @@ export const useVerification = (
     const { element, elementData } = verificationData;
     const uniqueId = getElementUniqueId(element);
 
+    selectParents(uniqueId);
+
     const { children, ...elementWithoutChildren } = elementData;
 
     setSelectedElements((prev) => ({
@@ -165,6 +171,8 @@ export const useVerification = (
     setShowVerification(false);
     setVerificationData(null);
   };
+
+
 
   return {
     showVerification,

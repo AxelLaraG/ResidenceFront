@@ -268,6 +268,63 @@ export const useElementSelection = (
     return ids;
   };
 
+  const selectParents = (elementId) => {
+    if (!dataXSD || !elementId) return;
+
+    const pathParts = elementId.split("_");
+    const parentUpdates = {};
+
+    const findElementInDataXSD = (targetPath) => {
+      const [sectionName, ...elementPath] = targetPath;
+
+      if (!dataXSD[sectionName]) return null;
+
+      let currentLevel = dataXSD[sectionName];
+      let foundElement = null;
+
+      if (elementPath.length === 0) {
+        return { name: sectionName, children: currentLevel };
+      }
+
+      for (let i = 0; i < elementPath.length; i++) {
+        const targetName = elementPath[i];
+
+        if (Array.isArray(currentLevel)) {
+          foundElement = currentLevel.find((item) => item.name === targetName);
+        } else if (currentLevel.children) {
+          foundElement = currentLevel.children.find(
+            (item) => item.name === targetName
+          );
+        }
+
+        if (!foundElement) break;
+
+        if (i === elementPath.length - 1) {
+          return foundElement;
+        }
+
+        currentLevel = foundElement;
+      }
+
+      return foundElement;
+    };
+
+    for (let i = pathParts.length - 1; i > 0; i--) {
+      const parentPath = pathParts.slice(0, i);
+      const parentId = parentPath.join("_");
+
+      const parentElement = findElementInDataXSD(parentPath);
+
+      if (parentElement) {
+        parentUpdates[parentId] = true;
+      }
+    }
+
+    if (Object.keys(parentUpdates).length > 0) {
+      setSelectedElements((prev) => ({ ...prev, ...parentUpdates }));
+    }
+  };
+
   useEffect(() => {
     updateGlobalChanges();
   }, [selectedElements, dataXSD, baseData, manualSelections]);
@@ -289,5 +346,6 @@ export const useElementSelection = (
     markAsAutomatedSelection,
     manualSelections,
     getDescendantIds,
+    selectParents,
   };
 };
