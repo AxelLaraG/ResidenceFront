@@ -126,3 +126,21 @@ export const updateSharingAPI = async (uniqueId, institutions) => {
     }
   }
 };
+
+export const updateXML = async (institution, data) => {
+  try {
+    const res = await apiClient.post("/api/update-xml", {
+      institution,
+      data,
+    });
+    return res.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(
+        error.response.data.detail || "Error al actualizar el XML"
+      );
+    } else {
+      throw new Error("Error al actualizar el XML");
+    }
+  }
+};

@@ -11,6 +11,7 @@ import UserDataTable from "@/components/ui/UserDataTable/UserDataTable";
 import SaveButton from "@/components/ui/SaveButton/SaveButton"; // Importa SaveButton
 import { useAuth } from "@/hooks/useAuth";
 import { useUserData } from "@/hooks/useUserData";
+import { updateXML } from "@/services/Functions";
 
 export default function MainView() {
   const [selectedSection, setSelectedSection] = useState(null);
@@ -111,24 +112,13 @@ export default function MainView() {
         return acc;
       }, {});
 
-      const response = await fetch("http://localhost:8000/api/update-xml", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          institution: selectedInstitution,
-          data: selectedData,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Error al guardar los datos.");
-      }
+      await updateXML(selectedInstitution, selectedData);
 
       console.log("Datos guardados exitosamente.");
+      // Aquí podrías añadir una notificación para el usuario
     } catch (error) {
       console.error("Error al guardar los datos:", error);
+      // Y aquí manejar el error, mostrando un mensaje al usuario
     }
   };
 
