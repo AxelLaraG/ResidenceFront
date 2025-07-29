@@ -20,11 +20,10 @@ export const useUserData = (user) => {
         setError(null);
 
         const baseConfig = await xsdToJson("base");
-        const username = user.email.split("@")[0];
-        const xmlText = await fetchUserXML(username);
+        const xmlText = await fetchUserXML(user.name);
         const formData = new FormData();
         const xmlBlob = new Blob([xmlText], { type: "text/xml" });
-        formData.append("documento_xml", xmlBlob, `${username}.xml`);
+        formData.append("documento_xml", xmlBlob, `${user.name}.xml`);
         const validationResult = await validateXML(formData);
 
         const processedData = {};

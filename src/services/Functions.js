@@ -95,7 +95,7 @@ export const updateBaseData = async (changesData, institute) => {
       `Recibiendo cambios para actualizar la base de datos: ${JSON.stringify(changesData)}`
     );
     const res = await apiClient.post("/api/update-base", changesData, {
-      params: { institute }, // institute va como query parameter
+      params: { institute }, 
     });
     return res.data;
   } catch (error) {

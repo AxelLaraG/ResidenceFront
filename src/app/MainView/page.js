@@ -30,7 +30,6 @@ export default function MainView() {
 
   const { displayData, loading, error, updateSharing } = useUserData(user);
 
-  // Establecer la institución inicial cuando el usuario y los datos estén disponibles
   useEffect(() => {
     if (user && user.institution && !selectedInstitution) {
       setSelectedInstitution(user.institution);
@@ -41,9 +40,8 @@ export default function MainView() {
     if (displayData && displayData[sectionName]) {
       setSelectedSection({
         groupName: sectionName,
-        // Los elementos se filtrarán a continuación
       });
-      setIsRowSelected(false); // Restablecer la selección de filas al cambiar de sección
+      setIsRowSelected(false);
     }
   };
 
@@ -53,11 +51,10 @@ export default function MainView() {
 
   const handleInstitutionChange = (institution) => {
     setSelectedInstitution(institution);
-    setSelectedSection(null); // Opcional: restablecer la sección al cambiar de institución
-    setIsRowSelected(false); // Restablecer la selección de filas
+    setSelectedSection(null);
+    setIsRowSelected(false);
   };
 
-  // Memoizamos los datos filtrados para mejorar el rendimiento
   const filteredData = useMemo(() => {
     if (!displayData || !selectedInstitution) return null;
 
@@ -91,17 +88,48 @@ export default function MainView() {
       : [];
 
   const handleElementSelect = (item, checked) => {
-    // Lógica para manejar la selección de elementos
-    // Por ahora, solo rastrearemos si alguna fila está seleccionada
     const anySelected = elementsForSelectedSection.some(
       (el) => document.getElementById(`checkbox-${el.uniqueId}`)?.checked
     );
     setIsRowSelected(anySelected || checked);
   };
 
-  const handleSave = () => {
-    // Manejar la lógica de guardado aquí
-    console.log("Guardando datos...");
+  const handleSave = async () => {
+    try {
+      if (!selectedInstitution || !elementsForSelectedSection) {
+        console.error("No hay institución seleccionada o datos para guardar.");
+        return;
+      }
+
+      const selectedData = elementsForSelectedSection.reduce((acc, element) => {
+        const checkbox = document.getElementById(
+          `checkbox-${element.uniqueId}`
+        );
+        if (checkbox?.checked) {
+          acc[element.label] = element.value;
+        }
+        return acc;
+      }, {});
+
+      const response = await fetch("http://localhost:8000/api/update-xml", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          institution: selectedInstitution,
+          data: selectedData,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al guardar los datos.");
+      }
+
+      console.log("Datos guardados exitosamente.");
+    } catch (error) {
+      console.error("Error al guardar los datos:", error);
+    }
   };
 
   return (
@@ -172,10 +200,10 @@ export default function MainView() {
                   onElementSelect={handleElementSelect}
                 />
                 {isRowSelected && (
-                    <div className="ml-4">
-                      <SaveButton handleSubmit={handleSave} />
-                    </div>
-                  )}
+                  <div className="ml-4">
+                    <SaveButton handleSubmit={handleSave} />
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-12 text-gray-500">
