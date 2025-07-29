@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/ui/Header/Header";
 import ErrorCard from "@/components/ui/ErrorMessage/Error";
@@ -8,13 +8,12 @@ import Loader from "@/components/ui/LoadPage/Load";
 import DeadToken from "@/components/ui/DeadToken/DeadToken";
 import SideMenu from "@/components/SideMenu/SideMenu";
 import UserDataTable from "@/components/ui/UserDataTable/UserDataTable";
-import Button from "@/components/ui/Button/Button";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserData } from "@/hooks/useUserData";
 
 export default function MainView() {
   const [selectedSection, setSelectedSection] = useState(null);
-  const [selectedElements, setSelectedElements] = useState({}); // Cambiado para selección múltiple
+  const [selectedInstitution, setSelectedInstitution] = useState(null);
   const router = useRouter();
 
   const {
@@ -29,13 +28,19 @@ export default function MainView() {
 
   const { displayData, loading, error, updateSharing } = useUserData(user);
 
+  // Establecer la institución inicial cuando el usuario y los datos estén disponibles
+  useEffect(() => {
+    if (user && user.institution && !selectedInstitution) {
+      setSelectedInstitution(user.institution);
+    }
+  }, [user, selectedInstitution]);
+
   const handleSectionSelection = (sectionName) => {
     if (displayData && displayData[sectionName]) {
       setSelectedSection({
         groupName: sectionName,
-        elements: displayData[sectionName],
+        // Los elementos se filtrarán a continuación
       });
-      setSelectedElements({}); // Resetea la selección al cambiar de sección
     }
   };
 
@@ -43,29 +48,44 @@ export default function MainView() {
     handleSectionSelection(node.name);
   };
 
-  const handleElementSelect = (element, isSelected) => {
-    setSelectedElements((prev) => {
-      const newSelected = { ...prev };
-      if (isSelected) {
-        newSelected[element.uniqueId] = element;
-      } else {
-        delete newSelected[element.uniqueId];
-      }
-      return newSelected;
-    });
+  const handleInstitutionChange = (institution) => {
+    setSelectedInstitution(institution);
+    setSelectedSection(null); // Opcional: resetear la sección al cambiar de institución
   };
 
-  const getSelectedInstitutions = () => {
-    const institutions = new Set();
-    Object.values(selectedElements).forEach((element) => {
-      if (element.sharedWith) {
-        element.sharedWith.forEach((inst) => institutions.add(inst));
+  // Memoizamos los datos filtrados para mejorar el rendimiento
+  const filteredData = useMemo(() => {
+    if (!displayData || !selectedInstitution) return null;
+
+    const filtered = {};
+    for (const sectionName in displayData) {
+      const sectionElements = displayData[sectionName].filter(
+        (element) =>
+          element.sharedWith && element.sharedWith.includes(selectedInstitution)
+      );
+      if (sectionElements.length > 0) {
+        filtered[sectionName] = sectionElements;
       }
+    }
+    return filtered;
+  }, [displayData, selectedInstitution]);
+  
+  const allInstitutions = useMemo(() => {
+    if (!displayData) return [];
+    const institutions = new Set();
+    Object.values(displayData).forEach(section => {
+      section.forEach(el => {
+        el.allInstitutions.forEach(inst => institutions.add(inst));
+      });
     });
     return Array.from(institutions);
-  };
+  }, [displayData]);
 
-  const selectedInstitutions = getSelectedInstitutions();
+
+  const elementsForSelectedSection =
+    filteredData && selectedSection
+      ? filteredData[selectedSection.groupName]
+      : [];
 
   return (
     <div>
@@ -96,6 +116,9 @@ export default function MainView() {
           onLogout={handleLogout}
           role={user?.role}
           onChangeView={() => router.push("/EsquemasConf")}
+          institutions={allInstitutions}
+          selectedInstitution={selectedInstitution}
+          onInstitutionChange={handleInstitutionChange}
         />
       </div>
 
@@ -114,7 +137,7 @@ export default function MainView() {
       <div className="flex h-screen flex-col">
         <div className="flex flex-1 overflow-hidden">
           <SideMenu
-            dataXSD={displayData}
+            dataXSD={filteredData}
             selectedSection={selectedSection}
             onNodeSelect={handleNodeSelect}
           />
@@ -125,35 +148,16 @@ export default function MainView() {
                   {selectedSection.groupName}
                 </h1>
                 <UserDataTable
-                  sectionData={selectedSection.elements}
+                  sectionData={elementsForSelectedSection}
                   onSharingChange={updateSharing}
-                  onElementSelect={handleElementSelect}
-                  selectedElements={selectedElements}
                 />
-                {selectedInstitutions.length > 0 && (
-                  <div className="mt-4 flex gap-4">
-                    {selectedInstitutions.map((institution) => (
-                      <Button
-                        key={institution}
-                        text={`Enviar a ${institution}`}
-                        onClick={() =>
-                          console.log(
-                            `Enviando ${Object.values(selectedElements)
-                              .map((el) => el.label)
-                              .join(", ")} a ${institution}`
-                          )
-                        }
-                      />
-                    ))}
-                  </div>
-                )}
               </div>
             ) : (
               <div className="text-center py-12 text-gray-500">
                 <svg
                   className="mx-auto h-12 w-12 text-gray-400"
                   fill="none"
-                  viewBox="0 0 24 24"
+                  viewBox="0 0 24"
                   stroke="currentColor"
                 >
                   <path
@@ -167,8 +171,12 @@ export default function MainView() {
                   Bienvenido a tu Gestor de Información
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  Selecciona una sección del menú lateral para ver y administrar
-                  con quién compartes tus datos.
+                  Selecciona una sección del menú para ver tus datos que puedes compartir
+                  con la institución:{" "}
+                  <span className="font-semibold text-indigo-600">
+                    {selectedInstitution}
+                  </span>
+                  .
                 </p>
               </div>
             )}

@@ -8,16 +8,12 @@ const renderValue = (value) => {
   return String(value);
 };
 
-const UserDataTable = ({
-  sectionData,
-  onSharingChange,
-  onElementSelect,
-  selectedElements,
-}) => {
+const UserDataTable = ({ sectionData, onSharingChange, isSelected }) => {
   if (!sectionData || sectionData.length === 0) {
     return (
       <p className="text-gray-500 p-4">
-        No hay datos para mostrar en esta sección.
+        No hay datos para mostrar en esta sección para la institución
+        seleccionada.
       </p>
     );
   }
@@ -33,24 +29,17 @@ const UserDataTable = ({
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {sectionData.map((item) => {
-            const isSelected = !!selectedElements[item.uniqueId];
-            return (
-              <tr
-                key={item.uniqueId}
-                className={isSelected ? "bg-blue-50" : "hover:bg-gray-50"}
-              >
-                <td className="p-3 align-top font-medium text-gray-800">
-                  <div className="flex justify-center">{item.label}</div>
-                </td>
-                <td className="p-3 align-top text-gray-600">
-                  <div className="flex justify-center">
-                    <pre className="whitespace-pre-wrap font-sans">
-                      {renderValue(item.value)}
-                    </pre>
-                  </div>
-                </td>
-                <td className="px-4 py-2 text-sm ">
+          {sectionData.map((item) => (
+            <tr key={item.uniqueId} className="hover:bg-gray-50">
+              <td className="p-3 align-top font-medium text-gray-800 text-center">
+                {item.label}
+              </td>
+              <td className="p-3 align-top text-gray-600 text-center">
+                <pre className="whitespace-pre-wrap font-sans">
+                  {renderValue(item.value)}
+                </pre>
+              </td>
+              <td className="px-4 py-2 text-sm ">
                   <div className="flex justify-center">
                     <Checkbox
                       id={`checkbox-${item.uniqueId}`}
@@ -61,9 +50,8 @@ const UserDataTable = ({
                     />
                   </div>
                 </td>
-              </tr>
-            );
-          })}
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

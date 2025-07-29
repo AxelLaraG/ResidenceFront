@@ -28,18 +28,19 @@ export const useUserData = (user) => {
         const validationResult = await validateXML(formData);
 
         const processedData = {};
-        const allInstitutions = ["PRODEP", "TecNM"];
+        const allInstitutionsSet = new Set();
         const baseMap = new Map();
 
         Object.values(baseConfig).forEach((section) => {
           section.forEach((element) => {
-            baseMap.set(
-              element.context.uniqueId,
-              element.context.institution || []
-            );
+            const institutions = element.context.institution || [];
+            institutions.forEach((inst) => allInstitutionsSet.add(inst));
+            baseMap.set(element.context.uniqueId, institutions);
           });
         });
 
+        const allInstitutions = Array.from(allInstitutionsSet).sort();
+        
         const processNode = (node, path) => {
           if (Array.isArray(node)) {
             node.forEach((item, index) => processNode(item, [...path, index]));
