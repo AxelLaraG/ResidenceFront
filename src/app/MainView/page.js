@@ -8,12 +8,14 @@ import Loader from "@/components/ui/LoadPage/Load";
 import DeadToken from "@/components/ui/DeadToken/DeadToken";
 import SideMenu from "@/components/SideMenu/SideMenu";
 import UserDataTable from "@/components/ui/UserDataTable/UserDataTable";
+import SaveButton from "@/components/ui/SaveButton/SaveButton"; // Importa SaveButton
 import { useAuth } from "@/hooks/useAuth";
 import { useUserData } from "@/hooks/useUserData";
 
 export default function MainView() {
   const [selectedSection, setSelectedSection] = useState(null);
   const [selectedInstitution, setSelectedInstitution] = useState(null);
+  const [isRowSelected, setIsRowSelected] = useState(false); // Nuevo estado para la selección de filas
   const router = useRouter();
 
   const {
@@ -41,6 +43,7 @@ export default function MainView() {
         groupName: sectionName,
         // Los elementos se filtrarán a continuación
       });
+      setIsRowSelected(false); // Restablecer la selección de filas al cambiar de sección
     }
   };
 
@@ -50,7 +53,8 @@ export default function MainView() {
 
   const handleInstitutionChange = (institution) => {
     setSelectedInstitution(institution);
-    setSelectedSection(null); // Opcional: resetear la sección al cambiar de institución
+    setSelectedSection(null); // Opcional: restablecer la sección al cambiar de institución
+    setIsRowSelected(false); // Restablecer la selección de filas
   };
 
   // Memoizamos los datos filtrados para mejorar el rendimiento
@@ -69,23 +73,36 @@ export default function MainView() {
     }
     return filtered;
   }, [displayData, selectedInstitution]);
-  
+
   const allInstitutions = useMemo(() => {
     if (!displayData) return [];
     const institutions = new Set();
-    Object.values(displayData).forEach(section => {
-      section.forEach(el => {
-        el.allInstitutions.forEach(inst => institutions.add(inst));
+    Object.values(displayData).forEach((section) => {
+      section.forEach((el) => {
+        el.allInstitutions.forEach((inst) => institutions.add(inst));
       });
     });
     return Array.from(institutions);
   }, [displayData]);
 
-
   const elementsForSelectedSection =
     filteredData && selectedSection
       ? filteredData[selectedSection.groupName]
       : [];
+
+  const handleElementSelect = (item, checked) => {
+    // Lógica para manejar la selección de elementos
+    // Por ahora, solo rastrearemos si alguna fila está seleccionada
+    const anySelected = elementsForSelectedSection.some(
+      (el) => document.getElementById(`checkbox-${el.uniqueId}`)?.checked
+    );
+    setIsRowSelected(anySelected || checked);
+  };
+
+  const handleSave = () => {
+    // Manejar la lógica de guardado aquí
+    console.log("Guardando datos...");
+  };
 
   return (
     <div>
@@ -144,13 +161,21 @@ export default function MainView() {
           <div className="flex-1 overflow-y-auto p-6">
             {selectedSection ? (
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-6">
-                  {selectedSection.groupName}
-                </h1>
+                <div className="flex items-center mb-6">
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {selectedSection.groupName}
+                  </h1>
+                </div>
                 <UserDataTable
                   sectionData={elementsForSelectedSection}
                   onSharingChange={updateSharing}
+                  onElementSelect={handleElementSelect}
                 />
+                {isRowSelected && (
+                    <div className="ml-4">
+                      <SaveButton handleSubmit={handleSave} />
+                    </div>
+                  )}
               </div>
             ) : (
               <div className="text-center py-12 text-gray-500">
@@ -171,8 +196,8 @@ export default function MainView() {
                   Bienvenido a tu Gestor de Información
                 </h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  Selecciona una sección del menú para ver tus datos que puedes compartir
-                  con la institución:{" "}
+                  Selecciona una sección del menú para ver tus datos que puedes
+                  compartir con la institución:{" "}
                   <span className="font-semibold text-indigo-600">
                     {selectedInstitution}
                   </span>

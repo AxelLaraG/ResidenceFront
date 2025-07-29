@@ -8,7 +8,12 @@ const renderValue = (value) => {
   return String(value);
 };
 
-const UserDataTable = ({ sectionData, onSharingChange, isSelected }) => {
+const UserDataTable = ({
+  sectionData,
+  onSharingChange,
+  isSelected,
+  onElementSelect,
+}) => {
   if (!sectionData || sectionData.length === 0) {
     return (
       <p className="text-gray-500 p-4">
@@ -40,16 +45,18 @@ const UserDataTable = ({ sectionData, onSharingChange, isSelected }) => {
                 </pre>
               </td>
               <td className="px-4 py-2 text-sm ">
-                  <div className="flex justify-center">
-                    <Checkbox
-                      id={`checkbox-${item.uniqueId}`}
-                      checked={isSelected}
-                      onChange={(e) => {
+                <div className="flex justify-center">
+                  <Checkbox
+                    id={`checkbox-${item.uniqueId}`}
+                    checked={isSelected}
+                    onChange={(e) => {
+                      if (onElementSelect) {
                         onElementSelect(item, e.target.checked);
-                      }}
-                    />
-                  </div>
-                </td>
+                      }
+                    }}
+                  />
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

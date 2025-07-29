@@ -18,7 +18,7 @@ const SaveButton = ({handleSubmit}) => {
             </svg>
           </div>
         </div>
-        <span>Enviar datos</span>
+        <span>Guardar</span>
       </button>
     </StyledWrapper>
   );
@@ -63,7 +63,7 @@ const StyledWrapper = styled.div`
   }
 
   button:hover svg {
-    transform: translateX(1.2em) scale(1.1);
+    transform: translateX(1.7em) scale(1.1);
     fill: #fff;
   }
 
