@@ -8,14 +8,14 @@ import {
 } from "@/services/Functions";
 import xml2js from "xml2js";
 
-export const useUserData = (user) => {
+export const useUserData = (user, selectedInstitution) => {
   const [displayData, setDisplayData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [syncStatus, setSyncStatus] = useState({});
 
   const loadAllData = useCallback(async () => {
-    if (!user || !user.institution) return;
+    if (!user || !selectedInstitution) return;
 
     try {
       setLoading(true);
@@ -26,7 +26,7 @@ export const useUserData = (user) => {
           xsdToJson("base"),
           fetchUserXML(user.name),
           xsdToJson("mapa"),
-          fetchInstitutionXML(user.institution, user.name),
+          fetchInstitutionXML(selectedInstitution, user.name),
         ]);
 
       const formData = new FormData();
@@ -182,7 +182,7 @@ export const useUserData = (user) => {
               });
 
               const targetUniqueId =
-                mappings[user.institution]?.[genericUniqueId];
+                mappings[selectedInstitution]?.[genericUniqueId];
 
               if (targetUniqueId) {
                 const institutionValueOrValues = findValueByUniqueId(
@@ -234,7 +234,7 @@ export const useUserData = (user) => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, selectedInstitution]);
 
   useEffect(() => {
     loadAllData();

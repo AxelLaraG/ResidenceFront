@@ -64,6 +64,9 @@ export const useAuth = (router) => {
     const loadUser = async () => {
       try {
         const usuario = await getCurrentUser();
+        if (usuario && !usuario.institution) {
+          usuario.institution = "TecNM";
+        }
         setUser(usuario);
       } catch (error) {
         throw new Error("Error al cargar el usuario:", error);

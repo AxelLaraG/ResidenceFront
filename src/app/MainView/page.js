@@ -36,7 +36,7 @@ export default function MainView() {
     updateSharing,
     syncStatus,
     refreshData,
-  } = useUserData(user);
+  } = useUserData(user, selectedInstitution);
 
   useEffect(() => {
     if (user && user.institution && !selectedInstitution) {
