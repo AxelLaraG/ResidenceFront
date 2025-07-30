@@ -162,6 +162,11 @@ export default function EsquemasConf() {
     });
   };
 
+  const handleParentRowClick = (element) => {
+    const newPath = [...selectedSection.fullPath, element.name];
+    handleNodeSelect(element, newPath);
+  };
+
   const handleRefreshAfterUpdate = async () => {
     try {
       setLoading(true);
@@ -280,14 +285,12 @@ export default function EsquemasConf() {
 
       <div className="flex h-screen flex-col">
         <div className="flex flex-1 overflow-hidden">
-          {/* Menú lateral */}
           <SideMenu
             dataXSD={dataXSD}
             selectedSection={selectedSection}
             onNodeSelect={handleNodeSelect}
           />
 
-          {/* Contenido principal */}
           <div className="flex-1 overflow-y-auto">
             <div className="p-6">
               {selectedSection ? (
@@ -315,6 +318,7 @@ export default function EsquemasConf() {
                       isElementInBaseData={isElementInBaseData}
                       getElementUniqueId={getElementUniqueId}
                       handleCheckboxChange={handleCheckboxChange}
+                      onParentRowClick={handleParentRowClick}
                     />
                   </div>
 

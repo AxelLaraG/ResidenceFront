@@ -7,6 +7,7 @@ const ElementsTable = ({
   isElementInBaseData,
   getElementUniqueId,
   handleCheckboxChange,
+  onParentRowClick,
 }) => {
   return (
     <div className="overflow-x-auto">
@@ -38,6 +39,7 @@ const ElementsTable = ({
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {elements.map((element, i) => {
+            const hasChildren = element.children && element.children.length > 0;
             const currentlySelected = isElementSelectedByUniqueId(element);
             const originallyInBase = isElementInBaseData(element);
             const hasChanged = currentlySelected !== originallyInBase;
@@ -46,16 +48,29 @@ const ElementsTable = ({
             return (
               <tr
                 key={i}
-                className={`hover:bg-gray-50 ${
-                  hasChanged ? "bg-yellow-50 border-l-4 border-yellow-400" : ""
-                }`}
+                onClick={
+                  hasChildren ? () => onParentRowClick(element) : undefined
+                }
+                className={`
+                  ${
+                    hasChildren
+                      ? "cursor-pointer bg-gray-50 hover:bg-indigo-50"
+                      : "hover:bg-gray-50"
+                  }
+                  ${
+                    hasChanged && !hasChildren
+                      ? "bg-yellow-50 border-l-4 border-yellow-400"
+                      : ""
+                  }
+                `}
               >
                 <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
                   <div className="flex items-center gap-2">
+                    {hasChildren ? "📁" : ""}
                     <div>
                       <div>{element.name}</div>
                     </div>
-                    {hasChanged && (
+                    {hasChanged && !hasChildren && (
                       <span className="text-yellow-600 text-xs">
                         {currentlySelected ? "(+)" : "(-)"}
                       </span>
@@ -138,17 +153,23 @@ const ElementsTable = ({
                 </td>
                 <td className="px-4 py-2 text-sm ">
                   <div className="flex justify-center">
-                    <Checkbox
-                      id={`checkbox-${elementUniqueId}-${i}`}
-                      checked={currentlySelected}
-                      onChange={(e) => {
-                        handleCheckboxChange(
-                          element,
-                          e.target.checked,
-                          element
-                        );
-                      }}
-                    />
+                    {!hasChildren ? (
+                      <Checkbox
+                        id={`checkbox-${elementUniqueId}-${i}`}
+                        checked={currentlySelected}
+                        onChange={(e) => {
+                          handleCheckboxChange(
+                            element,
+                            e.target.checked,
+                            element
+                          );
+                        }}
+                      />
+                    ) : (
+                      <span className="text-indigo-600 text-xs font-semibold">
+                        Navegar...
+                      </span>
+                    )}
                   </div>
                 </td>
               </tr>
