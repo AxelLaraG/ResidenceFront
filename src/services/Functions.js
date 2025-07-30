@@ -144,3 +144,19 @@ export const updateXML = async (institution, data) => {
     }
   }
 };
+
+export const updateFieldMapping = async (institution, sourceUniqueId, targetFieldName) => {
+  try {
+    const res = await apiClient.post("/api/update-mapping", {
+      institution,
+      sourceUniqueId,
+      targetFieldName,
+    });
+    return res.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data.detail || "Error al guardar el mapeo");
+    }
+    throw new Error("Error al guardar el mapeo");
+  }
+};

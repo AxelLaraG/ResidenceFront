@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { xsdToJson } from "@/services/Functions";
+import { xsdToJson, updateFieldMapping } from "@/services/Functions";
 
 // Components
 import Header from "@/components/ui/Header/Header";
@@ -15,6 +15,7 @@ import Verification from "@/components/ui/Verification/Verification";
 import SideMenu from "@/components/SideMenu/SideMenu";
 import ElementsTable from "@/components/ElementsTable/ElementsTable";
 import ChangesPanel from "@/components/ChangesPanel/ChangesPanel";
+import MappingModal from "@/components/ui/MapingModal/MapingModal";
 
 // Custom Hooks
 import { useAuth } from "@/hooks/useAuth";
@@ -28,6 +29,10 @@ export default function EsquemasConf() {
   const [selectedSection, setSelectedSection] = useState(null);
   const [showTreeView, setShowTreeView] = useState(false);
   const [baseData, setBaseData] = useState(null);
+
+  const [institutionXSD, setInstitutionXSD] = useState(null);
+  const [showMappingModal, setShowMappingModal] = useState(false);
+  const [elementToMap, setElementToMap] = useState(null);
 
   const router = useRouter();
 
@@ -70,7 +75,7 @@ export default function EsquemasConf() {
   const {
     showVerification,
     verificationData,
-    handleCheckboxChange,
+    handleCheckboxChange: originalHandleCheckboxChange,
     handleVerificationAccept,
     handleVerificationCancel,
     handleVerificationClose,
@@ -92,23 +97,66 @@ export default function EsquemasConf() {
   );
 
   useEffect(() => {
-    const loadXSD = async () => {
+    const loadAllXSDs = async () => {
       try {
         setLoading(true);
+        const rizomaData = await xsdToJson("rizoma");
+        setDataXSD(rizomaData);
 
-        const data = await xsdToJson("rizoma");
-        setDataXSD(data);
+        if (user && user.institution) {
+          const institutionKey = user.institution.toLowerCase();
+          const institutionData = await xsdToJson(institutionKey);
+          setInstitutionXSD(institutionData);
+        }
 
         const baseDataResult = await xsdToJson("base");
         setBaseData(baseDataResult);
       } catch (error) {
-        setError("Error al cargar el XSD");
+        setError("Error al cargar los esquemas XSD");
       } finally {
         setLoading(false);
       }
     };
-    loadXSD();
-  }, []);
+    if (user) {
+      // Espera a que el usuario esté cargado
+      loadAllXSDs();
+    }
+  }, [user]);
+
+  const handleCheckboxChange = (element, checked, elementData) => {
+    if (checked) {
+      // Si el usuario marca la casilla, abrimos el modal para mapear
+      setElementToMap({ element, elementData });
+      setShowMappingModal(true);
+    } else {
+      // Lógica para deseleccionar (puedes hacerla más compleja si es necesario)
+      // Por ejemplo, preguntar si se quiere eliminar el mapeo.
+      const uniqueId = getElementUniqueId(element);
+      setSelectedElements((prev) => ({ ...prev, [uniqueId]: false }));
+    }
+  };
+
+  const handleSaveMapping = async (sourceElement, targetFieldName) => {
+    try {
+      const sourceUniqueId = getElementUniqueId(sourceElement.element);
+      await updateFieldMapping(
+        user.institution,
+        sourceUniqueId,
+        targetFieldName
+      );
+
+      setSelectedElements((prev) => ({
+        ...prev,
+        [sourceUniqueId]: sourceElement.elementData,
+      }));
+
+      setShowMappingModal(false);
+      setElementToMap(null);
+      // Opcional: mostrar notificación de éxito
+    } catch (error) {
+      setError("Error al guardar el mapeo: " + error.message);
+    }
+  };
 
   const handleNodeSelect = (node, path) => {
     setSelectedSection({
@@ -222,6 +270,16 @@ export default function EsquemasConf() {
             onClose={handleDeselectCancel}
           />
         </div>
+      )}
+
+      {showMappingModal && (
+        <MappingModal
+          isOpen={showMappingModal}
+          onClose={() => setShowMappingModal(false)}
+          elementToMap={elementToMap}
+          institutionXSD={institutionXSD}
+          onSaveMapping={handleSaveMapping}
+        />
       )}
 
       <div className="flex h-screen flex-col">
