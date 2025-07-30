@@ -14,22 +14,22 @@ const ElementsTable = ({
       <table className="table-auto w-full">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Nombre
             </th>
-            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Tipo
             </th>
-            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Min Occurs
             </th>
-            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Max Occurs
             </th>
-            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Tipo Especial
             </th>
-            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
               Atributos
             </th>
             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -64,8 +64,8 @@ const ElementsTable = ({
                   }
                 `}
               >
-                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                  <div className="flex items-center gap-2">
+                <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900 align-middle">
+                  <div className="flex items-center justify-center gap-2">
                     {hasChildren ? "📁" : ""}
                     <div>
                       <div>{element.name}</div>
@@ -77,7 +77,7 @@ const ElementsTable = ({
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">
+                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700 text-center">
                   <span
                     className={`px-2 py-1 rounded text-xs font-medium ${
                       (element.type || element.baseType)?.endsWith("Type")
@@ -88,7 +88,7 @@ const ElementsTable = ({
                     {element.type || element.baseType || "N/A"}
                   </span>
                 </td>
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">
+                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700 text-center">
                   <span
                     className={`px-2 py-1 rounded text-xs font-medium ${
                       element.minOccurs === "0"
@@ -99,7 +99,7 @@ const ElementsTable = ({
                     {element.minOccurs}
                   </span>
                 </td>
-                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">
+                <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700 text-center">
                   <span
                     className={`px-2 py-1 rounded text-xs font-medium ${
                       element.maxOccurs === "unbounded"
@@ -110,8 +110,8 @@ const ElementsTable = ({
                     {element.maxOccurs}
                   </span>
                 </td>
-                <td className="px-4 py-2 whitespace-nowrap text-sm">
-                  <div className="flex gap-1">
+                <td className="px-4 py-2 whitespace-nowrap text-sm text-center">
+                  <div className="flex justify-center gap-1">
                     {element.isSimpleContent && (
                       <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
                         SimpleContent
@@ -124,7 +124,7 @@ const ElementsTable = ({
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-2 text-sm">
+                <td className="px-4 py-2 text-sm text-center">
                   {element.attributes && element.attributes.length > 0 ? (
                     <div className="space-y-1">
                       {element.attributes.map((attr, attrIndex) => (
