@@ -3,8 +3,34 @@ import Checkbox from "@/components/ui/CheckBox/CheckBox";
 
 const renderValue = (value) => {
   if (value && value["#text"]) return value["#text"];
-  if (typeof value === "object" && value !== null)
-    return JSON.stringify(value, null, 2);
+
+  if (typeof value === "object" && value !== null) {
+    if (Array.isArray(value)) {
+      return value.map((item, index) => (
+        <div key={index} className="mb-2 p-2 bg-gray-50 rounded">
+          {typeof item === "object"
+            ? Object.entries(item).map(([key, val]) => (
+                <div key={key} className="text-xs">
+                  <strong>{key}:</strong> {renderValue(val)}
+                </div>
+              ))
+            : String(item)}
+        </div>
+      ));
+    }
+
+    return (
+      <div className="space-y-1">
+        {Object.entries(value).map(([key, val]) => (
+          <div key={key} className="text-xs">
+            <strong className="text-gray-700">{key}:</strong>
+            <span className="ml-1">{renderValue(val)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return String(value);
 };
 
@@ -57,36 +83,57 @@ const UserDataTable = ({
             <th className="font-semibold p-3 text-center">Campo</th>
             <th className="font-semibold p-3 text-center">Valor</th>
             <th className="font-semibold p-3 text-center">Compartir</th>
+            <th className="font-semibold p-3 text-center">Tipo</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {sectionData.map((item) => (
-            <tr key={item.uniqueId} className="hover:bg-gray-50">
-              <td className="p-3 align-middle font-medium text-gray-800 text-center">
-                {item.label}
-                {/* 3. Añadir el indicador */}
-                <SyncIndicator status={syncStatus[item.uniqueId]} />
-              </td>
-              <td className="p-3 align-top text-gray-600 text-center">
-                <pre className="whitespace-pre-wrap font-sans">
-                  {renderValue(item.value)}
-                </pre>
-              </td>
-              <td className="px-4 py-2 text-sm ">
-                <div className="flex justify-center">
-                  <Checkbox
-                    id={`checkbox-${item.uniqueId}`}
-                    checked={isSelected}
-                    onChange={(e) => {
-                      if (onElementSelect) {
-                        onElementSelect(item, e.target.checked);
-                      }
-                    }}
-                  />
-                </div>
-              </td>
-            </tr>
-          ))}
+          {sectionData.map((item) => {
+            const isComplex =
+              typeof item.value === "object" && item.value !== null;
+            const isAdditive =
+              Array.isArray(item.value) ||
+              (item.label && item.label.toLowerCase().includes("item"));
+
+            return (
+              <tr key={item.uniqueId} className="hover:bg-gray-50">
+                <td className="p-3 align-middle font-medium text-gray-800 text-center">
+                  {item.label}
+                  <SyncIndicator status={syncStatus[item.uniqueId]} />
+                </td>
+                <td className="p-3 align-top text-gray-600 text-center max-w-md">
+                  <div className="whitespace-pre-wrap font-sans overflow-auto max-h-32">
+                    {renderValue(item.value)}
+                  </div>
+                </td>
+                <td className="px-4 py-2 text-sm">
+                  <div className="flex justify-center">
+                    <Checkbox
+                      id={`checkbox-${item.uniqueId}`}
+                      checked={isSelected}
+                      onChange={(e) => {
+                        if (onElementSelect) {
+                          onElementSelect(item, e.target.checked);
+                        }
+                      }}
+                    />
+                  </div>
+                </td>
+                <td className="px-4 py-2 text-xs text-center">
+                  <span
+                    className={`inline-block px-2 py-1 rounded text-xs ${
+                      isAdditive
+                        ? "bg-blue-100 text-blue-800"
+                        : isComplex
+                        ? "bg-purple-100 text-purple-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {isAdditive ? "Aditivo" : isComplex ? "Complejo" : "Simple"}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
