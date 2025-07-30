@@ -36,7 +36,7 @@ const UserDataTable = ({
         <tbody className="divide-y divide-gray-200">
           {sectionData.map((item) => (
             <tr key={item.uniqueId} className="hover:bg-gray-50">
-              <td className="p-3 align-top font-medium text-gray-800 text-center">
+              <td className="p-3 align-middle font-medium text-gray-800 text-center">
                 {item.label}
               </td>
               <td className="p-3 align-top text-gray-600 text-center">
