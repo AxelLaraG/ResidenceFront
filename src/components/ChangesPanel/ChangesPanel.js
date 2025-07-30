@@ -9,7 +9,9 @@ const ChangesPanel = ({
   setSelectedElements,
   setGlobalChanges,
   handleRefreshAfterUpdate,
-  user
+  user,
+  pendingMappings,
+  setPendingMappings,
 }) => {
   const handleUpdateBase = async () => {
     try {
@@ -17,12 +19,14 @@ const ChangesPanel = ({
         manual: globalChanges.manual,
         automated: globalChanges.automated,
         removed: globalChanges.removed,
+        mappings: pendingMappings,
       };
 
-      const result = await updateBaseData(changesData,user?.institution);
+      await updateBaseData(changesData, user?.institution);
 
       setSelectedElements({});
       setGlobalChanges({ manual: [], automated: [], added: [], removed: [] });
+      setPendingMappings({});
 
       if (handleRefreshAfterUpdate) {
         handleRefreshAfterUpdate();
@@ -34,11 +38,29 @@ const ChangesPanel = ({
 
   const handleDiscardChanges = () => {
     setSelectedElements({});
-    setGlobalChanges({ manual: [], automated: [], removed:[] });
+    setGlobalChanges({ manual: [], automated: [], removed: [] });
+    setPendingMappings({});
   };
 
   return (
     <>
+      {Object.keys(pendingMappings).length > 0 && (
+        <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+          <h4 className="text-sm font-medium text-purple-800 mb-2">
+            Mapeos de Campos Pendientes ({Object.keys(pendingMappings).length})
+          </h4>
+          <div className="text-xs text-purple-700">
+            <ul>
+              {Object.entries(pendingMappings).map(([source, target]) => (
+                <li key={source}>
+                  🔗 <strong>{source.split("_").pop()}</strong> se mapeará a{" "}
+                  <strong>{target}</strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
       {hasChangesInBaseData() && (
         <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <h4 className="text-sm font-medium text-blue-800 mb-2">
@@ -96,7 +118,9 @@ const ChangesPanel = ({
             <div className="mt-1 pt-1 border-t border-yellow-300">
               <strong>
                 Total de elementos:{" "}
-                {globalChanges.manual.length + globalChanges.automated.length + globalChanges.removed.length}
+                {globalChanges.manual.length +
+                  globalChanges.automated.length +
+                  globalChanges.removed.length}
               </strong>
             </div>
           </div>

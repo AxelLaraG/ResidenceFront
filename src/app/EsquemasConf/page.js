@@ -29,6 +29,7 @@ export default function EsquemasConf() {
   const [selectedSection, setSelectedSection] = useState(null);
   const [showTreeView, setShowTreeView] = useState(false);
   const [baseData, setBaseData] = useState(null);
+  const [pendingMappings, setPendingMappings] = useState({});
 
   const [institutionXSD, setInstitutionXSD] = useState(null);
   const [showMappingModal, setShowMappingModal] = useState(false);
@@ -79,7 +80,6 @@ export default function EsquemasConf() {
     handleVerificationAccept,
     handleVerificationCancel,
     handleVerificationClose,
-    // Añade los nuevos estados y manejadores
     showDeselectVerification,
     deselectVerificationData,
     handleDeselectAccept,
@@ -118,44 +118,40 @@ export default function EsquemasConf() {
       }
     };
     if (user) {
-      // Espera a que el usuario esté cargado
       loadAllXSDs();
     }
   }, [user]);
 
   const handleCheckboxChange = (element, checked, elementData) => {
     if (checked) {
-      // Si el usuario marca la casilla, abrimos el modal para mapear
       setElementToMap({ element, elementData });
       setShowMappingModal(true);
     } else {
-      // Lógica para deseleccionar (puedes hacerla más compleja si es necesario)
-      // Por ejemplo, preguntar si se quiere eliminar el mapeo.
       const uniqueId = getElementUniqueId(element);
+      setPendingMappings((prev) => {
+        const newMappings = { ...prev };
+        delete newMappings[uniqueId];
+        return newMappings;
+      });
       setSelectedElements((prev) => ({ ...prev, [uniqueId]: false }));
     }
   };
 
-  const handleSaveMapping = async (sourceElement, targetFieldName) => {
-    try {
-      const sourceUniqueId = getElementUniqueId(sourceElement.element);
-      await updateFieldMapping(
-        user.institution,
-        sourceUniqueId,
-        targetFieldName
-      );
+  const handleSaveMapping = (sourceElement, targetFieldName) => {
+    const sourceUniqueId = getElementUniqueId(sourceElement.element);
 
-      setSelectedElements((prev) => ({
-        ...prev,
-        [sourceUniqueId]: sourceElement.elementData,
-      }));
+    setPendingMappings((prev) => ({
+      ...prev,
+      [sourceUniqueId]: targetFieldName,
+    }));
 
-      setShowMappingModal(false);
-      setElementToMap(null);
-      // Opcional: mostrar notificación de éxito
-    } catch (error) {
-      setError("Error al guardar el mapeo: " + error.message);
-    }
+    setSelectedElements((prev) => ({
+      ...prev,
+      [sourceUniqueId]: sourceElement.elementData,
+    }));
+
+    setShowMappingModal(false);
+    setElementToMap(null);
   };
 
   const handleNodeSelect = (node, path) => {
@@ -338,6 +334,8 @@ export default function EsquemasConf() {
                     setGlobalChanges={setGlobalChanges}
                     handleRefreshAfterUpdate={handleRefreshAfterUpdate}
                     user={user}
+                    pendingMappings={pendingMappings}
+                    setPendingMappings={setPendingMappings}
                   />
                 </div>
               ) : (
