@@ -4,14 +4,22 @@ import Button from "@/components/ui/Button/Button";
 const TreeNode = ({ node, path, onNodeSelect, selectedPath, level = 0 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasChildren = node.children && node.children.length > 0;
-  
-  // Filtrar solo los hijos que tienen más hijos
-  const childrenWithChildren = hasChildren 
-    ? node.children.filter(child => child.children && child.children.length > 0)
+
+  const childrenWithChildren = hasChildren
+    ? node.children.filter(
+        (child) => child.children && child.children.length > 0
+      )
     : [];
 
   const currentPathStr = path.join("_");
   const isSelected = selectedPath === currentPathStr;
+
+  useEffect(() => {
+    const isAncestorOfSelected = selectedPath.startsWith(currentPathStr + "_");
+    if (isAncestorOfSelected) {
+      setIsExpanded(true);
+    }
+  }, [selectedPath, currentPathStr]);
 
   const handleClick = () => {
     onNodeSelect(node, path);
@@ -20,7 +28,6 @@ const TreeNode = ({ node, path, onNodeSelect, selectedPath, level = 0 }) => {
     }
   };
 
-  // Solo renderizar si el nodo tiene hijos
   if (!hasChildren) {
     return null;
   }
@@ -46,7 +53,7 @@ const TreeNode = ({ node, path, onNodeSelect, selectedPath, level = 0 }) => {
               path={[...path, childNode.name]}
               onNodeSelect={onNodeSelect}
               selectedPath={selectedPath}
-              level={level + 1} 
+              level={level + 1}
             />
           ))}
         </div>
@@ -62,8 +69,7 @@ const SideMenu = ({ dataXSD, onNodeSelect, selectedSection }) => {
 
   const selectedPath = selectedSection?.fullPath?.join("_") || "";
 
-  // Filtrar solo las secciones que tienen hijos
-  const sectionsWithChildren = Object.keys(dataXSD).filter(sectionName => {
+  const sectionsWithChildren = Object.keys(dataXSD).filter((sectionName) => {
     const section = dataXSD[sectionName];
     return section && section.length > 0;
   });
@@ -78,7 +84,11 @@ const SideMenu = ({ dataXSD, onNodeSelect, selectedSection }) => {
           {sectionsWithChildren.map((sectionName) => (
             <TreeNode
               key={sectionName}
-              node={{ name: sectionName, children: dataXSD[sectionName], hasComplexType: true }}
+              node={{
+                name: sectionName,
+                children: dataXSD[sectionName],
+                hasComplexType: true,
+              }}
               path={[sectionName]}
               onNodeSelect={onNodeSelect}
               selectedPath={selectedPath}
