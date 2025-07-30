@@ -10,19 +10,40 @@ const MappingModal = ({
 }) => {
   const [selectedTargetField, setSelectedTargetField] = useState("");
 
-  const institutionalFields = useMemo(() => {
+  const institutionalFieldGroups = useMemo(() => {
     if (!institutionXSD) return [];
-    const fields = [];
-    const extractFields = (elements) => {
+
+    const groups = [];
+    const seenFields = new Set();
+
+    const findLeafNodes = (elements) => {
+      const leaves = [];
       elements.forEach((el) => {
-        fields.push(el.name);
-        if (el.children && el.children.length > 0) {
-          extractFields(el.children);
+        if (!el.children || el.children.length === 0) {
+          if (!seenFields.has(el.name)) {
+            leaves.push(el.name);
+            seenFields.add(el.name);
+          }
+        } else {
+          leaves.push(...findLeafNodes(el.children));
         }
       });
+      return leaves;
     };
-    Object.values(institutionXSD).forEach((section) => extractFields(section));
-    return [...new Set(fields)]; // Eliminar duplicados
+
+    Object.values(institutionXSD).forEach((section) => {
+      section.forEach((topLevelElement) => {
+        const leafNodes = findLeafNodes(topLevelElement.children || []);
+        if (leafNodes.length > 0) {
+          groups.push({
+            parent: topLevelElement.name,
+            children: leafNodes.sort(), // Ordenamos los hijos alfabéticamente
+          });
+        }
+      });
+    });
+
+    return groups;
   }, [institutionXSD]);
 
   if (!isOpen) return null;
@@ -40,13 +61,13 @@ const MappingModal = ({
           Mapear Elemento
         </h2>
         <p className="mb-2 text-gray-700">
-          Estás compartiendo el elemento:{" "}
+          Estás compartiendo:{" "}
           <strong className="font-mono bg-gray-100 p-1 rounded">
             {elementToMap?.element.name}
           </strong>
         </p>
         <p className="mb-4 text-gray-700">
-          Selecciona con qué campo de tu institución se corresponde:
+          Selecciona el campo correspondiente en tu institución:
         </p>
 
         <select
@@ -57,10 +78,14 @@ const MappingModal = ({
           <option value="" disabled>
             Selecciona un campo...
           </option>
-          {institutionalFields.map((field) => (
-            <option key={field} value={field}>
-              {field}
-            </option>
+          {institutionalFieldGroups.map((group) => (
+            <optgroup key={group.parent} label={`--- ${group.parent} ---`}>
+              {group.children.map((field) => (
+                <option key={field} value={field}>
+                  {field}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
 
