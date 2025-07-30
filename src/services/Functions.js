@@ -92,10 +92,12 @@ export const xsdToJson = async (opt) => {
 export const updateBaseData = async (changesData, institute) => {
   try {
     console.log(
-      `Recibiendo cambios para actualizar la base de datos: ${JSON.stringify(changesData)}`
+      `Recibiendo cambios para actualizar la base de datos: ${JSON.stringify(
+        changesData
+      )}`
     );
     const res = await apiClient.post("/api/update-base", changesData, {
-      params: { institute }, 
+      params: { institute },
     });
     return res.data;
   } catch (error) {
@@ -145,7 +147,11 @@ export const updateXML = async (institution, data) => {
   }
 };
 
-export const updateFieldMapping = async (institution, sourceUniqueId, targetFieldName) => {
+export const updateFieldMapping = async (
+  institution,
+  sourceUniqueId,
+  targetFieldName
+) => {
   try {
     const res = await apiClient.post("/api/update-mapping", {
       institution,
@@ -155,8 +161,40 @@ export const updateFieldMapping = async (institution, sourceUniqueId, targetFiel
     return res.data;
   } catch (error) {
     if (error.response) {
-      throw new Error(error.response.data.detail || "Error al guardar el mapeo");
+      throw new Error(
+        error.response.data.detail || "Error al guardar el mapeo"
+      );
     }
     throw new Error("Error al guardar el mapeo");
+  }
+};
+
+export const getXmlUrls = async () => {
+  try {
+    const res = await apiClient.get("/api/xml-urls");
+    return res.data;
+  } catch (error) {
+    throw new Error("Error al obtener las URLs de los XML");
+  }
+};
+
+export const fetchInstitutionXML = async (institution, username) => {
+  try {
+    const urls = await getXmlUrls();
+    const baseUrl = urls[institution.toLowerCase()];
+    if (!baseUrl) {
+      throw new Error(`No se encontró URL para la institución: ${institution}`);
+    }
+    const res = await fetch(`${baseUrl}${username}.xml`);
+    if (!res.ok) {
+      if (res.status === 404) return null;
+      throw new Error(`No se pudo obtener el XML para ${institution}`);
+    }
+    const xmlText = await res.text();
+    return xmlText;
+  } catch (error) {
+    console.error(error);
+    if (error.message.includes("404")) return null;
+    throw new Error("Error al obtener el XML de la institución");
   }
 };

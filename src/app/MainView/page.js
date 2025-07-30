@@ -29,7 +29,8 @@ export default function MainView() {
     handleLogout,
   } = useAuth(router);
 
-  const { displayData, loading, error, updateSharing } = useUserData(user);
+  const { displayData, loading, error, updateSharing, syncStatus } =
+    useUserData(user);
 
   useEffect(() => {
     if (user && user.institution && !selectedInstitution) {
@@ -188,6 +189,7 @@ export default function MainView() {
                   sectionData={elementsForSelectedSection}
                   onSharingChange={updateSharing}
                   onElementSelect={handleElementSelect}
+                  syncStatus={syncStatus} 
                 />
                 {isRowSelected && (
                   <div className="ml-4">
