@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   fetchUserXML,
   validateXML,
@@ -14,221 +14,231 @@ export const useUserData = (user) => {
   const [error, setError] = useState(null);
   const [syncStatus, setSyncStatus] = useState({});
 
-  useEffect(() => {
+  const loadAllData = useCallback(async () => {
     if (!user || !user.institution) return;
 
-    const loadAllData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-        const [baseConfig, xmlText, mappings, institutionXmlText] =
-          await Promise.all([
-            xsdToJson("base"),
-            fetchUserXML(user.name),
-            xsdToJson("mapa"),
-            fetchInstitutionXML(user.institution, user.name),
-          ]);
+      const [baseConfig, xmlText, mappings, institutionXmlText] =
+        await Promise.all([
+          xsdToJson("base"),
+          fetchUserXML(user.name),
+          xsdToJson("mapa"),
+          fetchInstitutionXML(user.institution, user.name),
+        ]);
 
-        const formData = new FormData();
-        const xmlBlob = new Blob([xmlText], { type: "text/xml" });
-        formData.append("documento_xml", xmlBlob, `${user.name}.xml`);
-        const validationResult = await validateXML(formData);
+      const formData = new FormData();
+      const xmlBlob = new Blob([xmlText], { type: "text/xml" });
+      formData.append("documento_xml", xmlBlob, `${user.name}.xml`);
+      const validationResult = await validateXML(formData);
 
-        let institutionData = {};
-        if (institutionXmlText) {
-          const parser = new xml2js.Parser({
-            explicitArray: false,
-            trim: true,
-            charkey: "#text",
-            attrkey: "@attributes", 
-          });
-          const result = await parser.parseStringPromise(institutionXmlText);
-          const rootKey = Object.keys(result)[0];
-          institutionData = result[rootKey];
-        }
-
-        const processedData = {};
-        const newSyncStatus = {};
-        const allInstitutionsSet = new Set();
-        const baseMap = new Map();
-
-        Object.values(baseConfig).forEach((section) => {
-          section.forEach((element) => {
-            const institutions = element.context.institution || [];
-            institutions.forEach((inst) => allInstitutionsSet.add(inst));
-            baseMap.set(element.context.uniqueId, institutions);
-          });
+      let institutionData = {};
+      if (institutionXmlText) {
+        const parser = new xml2js.Parser({
+          explicitArray: false,
+          trim: true,
+          charkey: "#text",
+          attrkey: "@attributes",
         });
+        const result = await parser.parseStringPromise(institutionXmlText);
+        const rootKey = Object.keys(result)[0];
+        institutionData = result[rootKey];
+      }
 
-        const allInstitutions = Array.from(allInstitutionsSet).sort();
+      const processedData = {};
+      const newSyncStatus = {};
+      const allInstitutionsSet = new Set();
+      const baseMap = new Map();
 
-        const getNodeValue = (node) => {
-          if (typeof node === "object" && node !== null && node["#text"]) {
-            return node["#text"];
+      Object.values(baseConfig).forEach((section) => {
+        section.forEach((element) => {
+          const institutions = element.context.institution || [];
+          institutions.forEach((inst) => allInstitutionsSet.add(inst));
+          baseMap.set(element.context.uniqueId, institutions);
+        });
+      });
+
+      const allInstitutions = Array.from(allInstitutionsSet).sort();
+
+      const getNodeValue = (node) => {
+        if (typeof node === "object" && node !== null && node["#text"]) {
+          return node["#text"];
+        }
+        return node;
+      };
+
+      const findValueByKey = (obj, targetKey) => {
+        if (typeof obj !== "object" || obj === null) {
+          return undefined;
+        }
+        if (obj.hasOwnProperty(targetKey)) {
+          return obj[targetKey];
+        }
+        for (const key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            const found = findValueByKey(obj[key], targetKey);
+            if (found !== undefined) {
+              return found;
+            }
           }
-          return node;
-        };
+        }
+        return undefined;
+      };
 
-        const findValueByKey = (obj, targetKey) => {
-          if (typeof obj !== "object" || obj === null) {
+      const findValueByUniqueId = (obj, targetUniqueId) => {
+        const parts = targetUniqueId.split("_");
+        let current = obj;
+
+        for (let i = 1; i < parts.length; i++) {
+          const part = parts[i];
+
+          if (part.startsWith("@")) {
+            const attributeName = part.substring(1);
+            if (
+              current &&
+              typeof current === "object" &&
+              current["@attributes"]
+            ) {
+              return current["@attributes"][attributeName];
+            }
             return undefined;
           }
-          if (obj.hasOwnProperty(targetKey)) {
-            return obj[targetKey];
-          }
-          for (const key in obj) {
-            if (obj.hasOwnProperty(key)) {
-              const found = findValueByKey(obj[key], targetKey);
-              if (found !== undefined) {
-                return found;
-              }
-            }
-          }
-          return undefined;
-        };
 
-        const findValueByUniqueId = (obj, targetUniqueId) => {
-          const parts = targetUniqueId.split("_");
-          let current = obj;
-
-          for (let i = 1; i < parts.length; i++) {
-            const part = parts[i];
-
-            if (part.startsWith("@")) {
-              const attributeName = part.substring(1);
-              if (
-                current &&
-                typeof current === "object" &&
-                current["@attributes"]
-              ) {
-                return current["@attributes"][attributeName];
-              }
-              return undefined;
-            }
-
-            if (current && typeof current === "object") {
-              if (current[part] !== undefined) {
-                current = current[part];
-                if (Array.isArray(current) && current.length > 0) {
-                  current = current[0];
-                }
-              } else {
-                let found = false;
-                for (const key in current) {
-                  if (Array.isArray(current[key])) {
-                    for (const item of current[key]) {
-                      if (
-                        item &&
-                        typeof item === "object" &&
-                        item[part] !== undefined
-                      ) {
-                        current = item[part];
-                        found = true;
-                        break;
-                      }
-                    }
-                    if (found) break;
-                  }
-                }
-                if (!found) {
-                  return undefined;
-                }
+          if (current && typeof current === "object") {
+            if (current[part] !== undefined) {
+              current = current[part];
+              if (Array.isArray(current) && current.length > 0) {
+                current = current[0];
               }
             } else {
-              return undefined;
-            }
-          }
-
-          return current;
-        };
-
-        const processNode = (node, path) => {
-          if (Array.isArray(node)) {
-            node.forEach((item, index) => processNode(item, [...path, index]));
-            return;
-          }
-
-          if (typeof node !== "object" || node === null) return;
-
-          for (const key in node) {
-            if (key === "@attributes") continue;
-
-            const currentPath = [...path, key];
-            const uniqueIdWithIndex = currentPath.join("_");
-            const genericUniqueId = currentPath
-              .filter((p) => isNaN(parseInt(p, 10)))
-              .join("_");
-
-            let value = getNodeValue(node[key]);
-            let isLeafNode = typeof value !== "object" || value === null;
-
-            if (isLeafNode && baseMap.has(genericUniqueId)) {
-              const sectionName = currentPath[1];
-              if (!processedData[sectionName]) {
-                processedData[sectionName] = [];
+              let found = false;
+              for (const key in current) {
+                if (Array.isArray(current[key])) {
+                  for (const item of current[key]) {
+                    if (
+                      item &&
+                      typeof item === "object" &&
+                      item[part] !== undefined
+                    ) {
+                      current = item[part];
+                      found = true;
+                      break;
+                    }
+                  }
+                  if (found) break;
+                }
               }
+              if (!found) {
+                return undefined;
+              }
+            }
+          } else {
+            return undefined;
+          }
+        }
 
-              if (
-                !processedData[sectionName].some(
-                  (el) => el.uniqueId === uniqueIdWithIndex
-                )
-              ) {
-                processedData[sectionName].push({
-                  uniqueId: uniqueIdWithIndex,
-                  label: key,
-                  value: value,
-                  sharedWith: baseMap.get(genericUniqueId),
-                  allInstitutions,
-                });
+        return current;
+      };
 
-                const targetUniqueId =
-                  mappings[user.institution]?.[genericUniqueId];
+      const processNode = (node, path) => {
+        if (Array.isArray(node)) {
+          node.forEach((item, index) => processNode(item, [...path, index]));
+          return;
+        }
 
-                if (targetUniqueId) {
-                  const foundValue = findValueByUniqueId(
-                    institutionData,
-                    targetUniqueId
-                  );
+        if (typeof node !== "object" || node === null) return;
 
-                  if (foundValue !== undefined) {
-                    const userValue = String(value || "").trim();
+        for (const key in node) {
+          if (key === "@attributes") continue;
+
+          const currentPath = [...path, key];
+          const uniqueIdWithIndex = currentPath.join("_");
+          const genericUniqueId = currentPath
+            .filter((p) => isNaN(parseInt(p, 10)))
+            .join("_");
+
+          let value = getNodeValue(node[key]);
+          let isLeafNode = typeof value !== "object" || value === null;
+
+          if (isLeafNode && baseMap.has(genericUniqueId)) {
+            const sectionName = currentPath[1];
+            if (!processedData[sectionName]) {
+              processedData[sectionName] = [];
+            }
+
+            if (
+              !processedData[sectionName].some(
+                (el) => el.uniqueId === uniqueIdWithIndex
+              )
+            ) {
+              processedData[sectionName].push({
+                uniqueId: uniqueIdWithIndex,
+                label: key,
+                value: value,
+                sharedWith: baseMap.get(genericUniqueId),
+                allInstitutions,
+              });
+
+              const targetUniqueId =
+                mappings[user.institution]?.[genericUniqueId];
+
+              if (targetUniqueId) {
+                const institutionValueOrValues = findValueByUniqueId(
+                  institutionData,
+                  targetUniqueId
+                );
+
+                if (institutionValueOrValues !== undefined) {
+                  const userValue = String(value || "").trim();
+
+                  if (Array.isArray(institutionValueOrValues)) {
+                    const institutionValues = institutionValueOrValues.map(
+                      (v) => String(v || "").trim()
+                    );
+                    newSyncStatus[uniqueIdWithIndex] =
+                      institutionValues.includes(userValue)
+                        ? "synced"
+                        : "out_of_sync";
+                  } else {
                     const institutionValue = String(
-                      getNodeValue(foundValue) || ""
+                      getNodeValue(institutionValueOrValues) || ""
                     ).trim();
-
                     newSyncStatus[uniqueIdWithIndex] =
                       userValue === institutionValue ? "synced" : "out_of_sync";
-                  } else {
-                    newSyncStatus[uniqueIdWithIndex] = "not_mapped";
                   }
                 } else {
                   newSyncStatus[uniqueIdWithIndex] = "not_mapped";
                 }
+              } else {
+                newSyncStatus[uniqueIdWithIndex] = "not_mapped";
               }
             }
-
-            if (typeof node[key] === "object" && node[key] !== null) {
-              processNode(node[key], currentPath);
-            }
           }
-        };
 
-        const rootKey = Object.keys(validationResult.data)[0];
-        processNode(validationResult.data[rootKey], [rootKey]);
+          if (typeof node[key] === "object" && node[key] !== null) {
+            processNode(node[key], currentPath);
+          }
+        }
+      };
 
-        setDisplayData(processedData);
-        setSyncStatus(newSyncStatus);
-      } catch (e) {
-        console.error("Error detallado en useUserData:", e);
-        setError("Error al cargar los datos: " + e.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+      const rootKey = Object.keys(validationResult.data)[0];
+      processNode(validationResult.data[rootKey], [rootKey]);
 
-    loadAllData();
+      setDisplayData(processedData);
+      setSyncStatus(newSyncStatus);
+    } catch (e) {
+      console.error("Error detallado en useUserData:", e);
+      setError("Error al cargar los datos: " + e.message);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
+
+  useEffect(() => {
+    loadAllData();
+  }, [loadAllData]);
 
   const updateSharing = async (uniqueId, newInstitutions) => {
     try {
@@ -251,5 +261,12 @@ export const useUserData = (user) => {
     }
   };
 
-  return { displayData, loading, error, updateSharing, syncStatus };
+  return {
+    displayData,
+    loading,
+    error,
+    updateSharing,
+    syncStatus,
+    refreshData: loadAllData,
+  };
 };

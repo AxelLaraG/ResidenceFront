@@ -29,8 +29,14 @@ export default function MainView() {
     handleLogout,
   } = useAuth(router);
 
-  const { displayData, loading, error, updateSharing, syncStatus } =
-    useUserData(user);
+  const {
+    displayData,
+    loading,
+    error,
+    updateSharing,
+    syncStatus,
+    refreshData,
+  } = useUserData(user);
 
   useEffect(() => {
     if (user && user.institution && !selectedInstitution) {
@@ -116,10 +122,11 @@ export default function MainView() {
       await updateXML(selectedInstitution, selectedData);
 
       console.log("Datos guardados exitosamente.");
-      // Aquí podrías añadir una notificación para el usuario
+
+      await refreshData();
     } catch (error) {
       console.error("Error al guardar los datos:", error);
-      // Y aquí manejar el error, mostrando un mensaje al usuario
+      setError("Error al guardar los datos.");
     }
   };
 
@@ -189,7 +196,7 @@ export default function MainView() {
                   sectionData={elementsForSelectedSection}
                   onSharingChange={updateSharing}
                   onElementSelect={handleElementSelect}
-                  syncStatus={syncStatus} 
+                  syncStatus={syncStatus}
                 />
                 {isRowSelected && (
                   <div className="ml-4">
