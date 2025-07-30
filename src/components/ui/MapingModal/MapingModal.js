@@ -16,25 +16,28 @@ const MappingModal = ({
     const fields = [];
     const seenFields = new Set();
 
-    const findLeafNodes = (elements, path) => {
+    const findLeafNodes = (elements, path, uniqueIdPath) => {
       elements.forEach((el) => {
         const currentPath = [...path, el.name];
+        const currentUniqueIdPath = [...uniqueIdPath, el.name];
+        const uniqueId = currentUniqueIdPath.join("_");
+
         if (!el.children || el.children.length === 0) {
-          if (!seenFields.has(el.name)) {
+          if (!seenFields.has(uniqueId)) {
             fields.push({
               label: currentPath.join(" > "),
-              value: el.name,
+              value: uniqueId, 
             });
-            seenFields.add(el.name);
+            seenFields.add(uniqueId);
           }
         } else {
-          findLeafNodes(el.children, currentPath);
+          findLeafNodes(el.children, currentPath, currentUniqueIdPath);
         }
       });
     };
 
-    Object.values(institutionXSD).forEach((section) =>
-      findLeafNodes(section, [])
+    Object.entries(institutionXSD).forEach(([sectionName, section]) =>
+      findLeafNodes(section, [sectionName], [sectionName])
     );
 
     return fields.sort((a, b) => a.label.localeCompare(b.label));

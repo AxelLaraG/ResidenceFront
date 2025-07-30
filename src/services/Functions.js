@@ -150,13 +150,13 @@ export const updateXML = async (institution, data) => {
 export const updateFieldMapping = async (
   institution,
   sourceUniqueId,
-  targetFieldName
+  targetUniqueId 
 ) => {
   try {
     const res = await apiClient.post("/api/update-mapping", {
       institution,
       sourceUniqueId,
-      targetFieldName,
+      targetUniqueId, 
     });
     return res.data;
   } catch (error) {

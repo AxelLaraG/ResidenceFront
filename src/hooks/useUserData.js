@@ -87,6 +87,57 @@ export const useUserData = (user) => {
           return undefined;
         };
 
+        const findValueByUniqueId = (obj, targetUniqueId) => {
+          const parts = targetUniqueId.split("_");
+          let current = obj;
+
+          for (let i = 1; i < parts.length; i++) {
+            const part = parts[i];
+
+            if (current && typeof current === "object") {
+              if (current[part] !== undefined) {
+                current = current[part];
+
+                // Si el elemento actual es un array, tomar el primer elemento
+                // (esto es común en estructuras XML con maxOccurs="unbounded")
+                if (Array.isArray(current) && current.length > 0) {
+                  current = current[0];
+                }
+              } else {
+                // Si no encontramos la parte exacta, buscar en arrays
+                let found = false;
+                for (const key in current) {
+                  if (Array.isArray(current[key])) {
+                    // Buscar en cada elemento del array si contiene la parte que buscamos
+                    for (const item of current[key]) {
+                      if (
+                        item &&
+                        typeof item === "object" &&
+                        item[part] !== undefined
+                      ) {
+                        current = item[part];
+                        found = true;
+                        break;
+                      }
+                    }
+                    if (found) break;
+                  }
+                }
+
+                if (!found) {
+                  console.log(`No se encontró la parte: ${part}`);
+                  console.log(`Claves disponibles:`, Object.keys(current));
+                  return undefined;
+                }
+              }
+            } else {
+              return undefined;
+            }
+          }
+
+          return current;
+        };
+
         const processNode = (node, path) => {
           if (Array.isArray(node)) {
             node.forEach((item, index) => processNode(item, [...path, index]));
@@ -126,20 +177,26 @@ export const useUserData = (user) => {
                   allInstitutions,
                 });
 
-                const mappingKey =
+                const targetUniqueId =
                   mappings[user.institution]?.[genericUniqueId];
-                const foundValueNode = mappingKey
-                  ? findValueByKey(institutionData, mappingKey)
-                  : undefined;
 
-                if (mappingKey && foundValueNode !== undefined) {
-                  const userValue = String(value || "").trim();
-                  const institutionValue = String(
-                    getNodeValue(foundValueNode) || ""
-                  ).trim();
+                if (targetUniqueId) {
+                  const foundValue = findValueByUniqueId(
+                    institutionData,
+                    targetUniqueId
+                  );
 
-                  newSyncStatus[uniqueIdWithIndex] =
-                    userValue === institutionValue ? "synced" : "out_of_sync";
+                  if (foundValue !== undefined) {
+                    const userValue = String(value || "").trim();
+                    const institutionValue = String(
+                      getNodeValue(foundValue) || ""
+                    ).trim();
+
+                    newSyncStatus[uniqueIdWithIndex] =
+                      userValue === institutionValue ? "synced" : "out_of_sync";
+                  } else {
+                    newSyncStatus[uniqueIdWithIndex] = "not_mapped";
+                  }
                 } else {
                   newSyncStatus[uniqueIdWithIndex] = "not_mapped";
                 }
