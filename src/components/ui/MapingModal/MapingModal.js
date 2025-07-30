@@ -16,7 +16,7 @@ const MappingModal = ({
     const fields = [];
     const seenFields = new Set();
 
-    const findLeafNodes = (elements, path, uniqueIdPath) => {
+    const findLeafNodesAndAttributes = (elements, path, uniqueIdPath) => {
       elements.forEach((el) => {
         const currentPath = [...path, el.name];
         const currentUniqueIdPath = [...uniqueIdPath, el.name];
@@ -26,18 +26,41 @@ const MappingModal = ({
           if (!seenFields.has(uniqueId)) {
             fields.push({
               label: currentPath.join(" > "),
-              value: uniqueId, 
+              value: uniqueId,
+              isAttribute: false,
+              elementName: el.name,
             });
             seenFields.add(uniqueId);
           }
         } else {
-          findLeafNodes(el.children, currentPath, currentUniqueIdPath);
+          findLeafNodesAndAttributes(
+            el.children,
+            currentPath,
+            currentUniqueIdPath
+          );
+        }
+
+        if (el.attributes && el.attributes.length > 0) {
+          el.attributes.forEach((attr) => {
+            if (attr.use === "required") {
+              const attrUniqueId = `${uniqueId}_@${attr.name}`;
+              if (!seenFields.has(attrUniqueId)) {
+                fields.push({
+                  label: `${currentPath.join(" > ")} > (atributo) ${attr.name}`,
+                  value: attrUniqueId,
+                  isAttribute: true,
+                  elementName: el.name,
+                });
+                seenFields.add(attrUniqueId);
+              }
+            }
+          });
         }
       });
     };
 
     Object.entries(institutionXSD).forEach(([sectionName, section]) =>
-      findLeafNodes(section, [sectionName], [sectionName])
+      findLeafNodesAndAttributes(section, [sectionName], [sectionName])
     );
 
     return fields.sort((a, b) => a.label.localeCompare(b.label));

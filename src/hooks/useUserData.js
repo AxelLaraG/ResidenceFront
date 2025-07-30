@@ -41,6 +41,7 @@ export const useUserData = (user) => {
             explicitArray: false,
             trim: true,
             charkey: "#text",
+            attrkey: "@attributes", 
           });
           const result = await parser.parseStringPromise(institutionXmlText);
           const rootKey = Object.keys(result)[0];
@@ -94,21 +95,28 @@ export const useUserData = (user) => {
           for (let i = 1; i < parts.length; i++) {
             const part = parts[i];
 
+            if (part.startsWith("@")) {
+              const attributeName = part.substring(1);
+              if (
+                current &&
+                typeof current === "object" &&
+                current["@attributes"]
+              ) {
+                return current["@attributes"][attributeName];
+              }
+              return undefined;
+            }
+
             if (current && typeof current === "object") {
               if (current[part] !== undefined) {
                 current = current[part];
-
-                // Si el elemento actual es un array, tomar el primer elemento
-                // (esto es común en estructuras XML con maxOccurs="unbounded")
                 if (Array.isArray(current) && current.length > 0) {
                   current = current[0];
                 }
               } else {
-                // Si no encontramos la parte exacta, buscar en arrays
                 let found = false;
                 for (const key in current) {
                   if (Array.isArray(current[key])) {
-                    // Buscar en cada elemento del array si contiene la parte que buscamos
                     for (const item of current[key]) {
                       if (
                         item &&
@@ -123,10 +131,7 @@ export const useUserData = (user) => {
                     if (found) break;
                   }
                 }
-
                 if (!found) {
-                  console.log(`No se encontró la parte: ${part}`);
-                  console.log(`Claves disponibles:`, Object.keys(current));
                   return undefined;
                 }
               }
