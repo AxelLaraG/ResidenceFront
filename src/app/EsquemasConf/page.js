@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { xsdToJson, updateFieldMapping } from "@/services/Functions";
+import { xsdToJson } from "@/services/Functions";
 
 // Components
 import Header from "@/components/ui/Header/Header";
