@@ -10,40 +10,34 @@ const MappingModal = ({
 }) => {
   const [selectedTargetField, setSelectedTargetField] = useState("");
 
-  const institutionalFieldGroups = useMemo(() => {
+  const institutionalFieldsList = useMemo(() => {
     if (!institutionXSD) return [];
 
-    const groups = [];
+    const fields = [];
     const seenFields = new Set();
 
-    const findLeafNodes = (elements) => {
-      const leaves = [];
+    const findLeafNodes = (elements, path) => {
       elements.forEach((el) => {
+        const currentPath = [...path, el.name];
         if (!el.children || el.children.length === 0) {
           if (!seenFields.has(el.name)) {
-            leaves.push(el.name);
+            fields.push({
+              label: currentPath.join(" > "),
+              value: el.name,
+            });
             seenFields.add(el.name);
           }
         } else {
-          leaves.push(...findLeafNodes(el.children));
+          findLeafNodes(el.children, currentPath);
         }
       });
-      return leaves;
     };
 
-    Object.values(institutionXSD).forEach((section) => {
-      section.forEach((topLevelElement) => {
-        const leafNodes = findLeafNodes(topLevelElement.children || []);
-        if (leafNodes.length > 0) {
-          groups.push({
-            parent: topLevelElement.name,
-            children: leafNodes.sort(), // Ordenamos los hijos alfabéticamente
-          });
-        }
-      });
-    });
+    Object.values(institutionXSD).forEach((section) =>
+      findLeafNodes(section, [])
+    );
 
-    return groups;
+    return fields.sort((a, b) => a.label.localeCompare(b.label));
   }, [institutionXSD]);
 
   if (!isOpen) return null;
@@ -56,7 +50,7 @@ const MappingModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+      <div className="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
           Mapear Elemento
         </h2>
@@ -66,26 +60,23 @@ const MappingModal = ({
             {elementToMap?.element.name}
           </strong>
         </p>
-        <p className="mb-4 text-gray-700">
-          Selecciona el campo correspondiente en tu institución:
+        <p className="mb-4 text-gray-700 font-semibold">
+          Selecciona el campo correspondiente en la estructura de tu
+          institución:
         </p>
 
         <select
           value={selectedTargetField}
           onChange={(e) => setSelectedTargetField(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-md mb-6"
+          className="w-full p-2 border border-gray-300 rounded-md mb-6 font-mono text-sm"
         >
           <option value="" disabled>
             Selecciona un campo...
           </option>
-          {institutionalFieldGroups.map((group) => (
-            <optgroup key={group.parent} label={`--- ${group.parent} ---`}>
-              {group.children.map((field) => (
-                <option key={field} value={field}>
-                  {field}
-                </option>
-              ))}
-            </optgroup>
+          {institutionalFieldsList.map((field) => (
+            <option key={field.value} value={field.value}>
+              {field.label}
+            </option>
           ))}
         </select>
 
