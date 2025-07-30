@@ -107,7 +107,7 @@ export default function MainView() {
           `checkbox-${element.uniqueId}`
         );
         if (checkbox?.checked) {
-          acc[element.label] = element.value;
+          acc[element.uniqueId] = element.value;
         }
         return acc;
       }, {});
