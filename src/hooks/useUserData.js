@@ -69,77 +69,43 @@ export const useUserData = (user, selectedInstitution) => {
         return node;
       };
 
-      const findValueByKey = (obj, targetKey) => {
-        if (typeof obj !== "object" || obj === null) {
-          return undefined;
-        }
-        if (obj.hasOwnProperty(targetKey)) {
-          return obj[targetKey];
-        }
-        for (const key in obj) {
-          if (obj.hasOwnProperty(key)) {
-            const found = findValueByKey(obj[key], targetKey);
-            if (found !== undefined) {
-              return found;
-            }
-          }
-        }
-        return undefined;
-      };
-
       const findValueByUniqueId = (obj, targetUniqueId) => {
-        const parts = targetUniqueId.split("_");
+        const parts = targetUniqueId.split("_").slice(1);
         let current = obj;
 
-        for (let i = 1; i < parts.length; i++) {
+        for (let i = 0; i < parts.length - 1; i++) {
           const part = parts[i];
-
-          if (part.startsWith("@")) {
-            const attributeName = part.substring(1);
-            if (
-              current &&
-              typeof current === "object" &&
-              current["@attributes"]
-            ) {
-              return current["@attributes"][attributeName];
-            }
-            return undefined;
-          }
-
-          if (current && typeof current === "object") {
-            if (current[part] !== undefined) {
-              current = current[part];
-              if (Array.isArray(current) && current.length > 0) {
-                current = current[0];
-              }
-            } else {
-              let found = false;
-              for (const key in current) {
-                if (Array.isArray(current[key])) {
-                  for (const item of current[key]) {
-                    if (
-                      item &&
-                      typeof item === "object" &&
-                      item[part] !== undefined
-                    ) {
-                      current = item[part];
-                      found = true;
-                      break;
-                    }
-                  }
-                  if (found) break;
-                }
-              }
-              if (!found) {
-                return undefined;
-              }
-            }
+          if (
+            current &&
+            typeof current === "object" &&
+            current[part] !== undefined
+          ) {
+            current = current[part];
           } else {
             return undefined;
           }
         }
 
-        return current;
+        const lastPart = parts[parts.length - 1];
+        if (Array.isArray(current)) {
+          return current
+            .map((item) => {
+              if (lastPart.startsWith("@")) {
+                const attributeName = lastPart.substring(1);
+                return item["@attributes"]?.[attributeName];
+              }
+              return item[lastPart];
+            })
+            .filter((v) => v !== undefined);
+        } else if (
+          current &&
+          typeof current === "object" &&
+          current[lastPart] !== undefined
+        ) {
+          return current[lastPart];
+        }
+
+        return undefined;
       };
 
       const processNode = (node, path) => {
@@ -195,7 +161,7 @@ export const useUserData = (user, selectedInstitution) => {
 
                   if (Array.isArray(institutionValueOrValues)) {
                     const institutionValues = institutionValueOrValues.map(
-                      (v) => String(v || "").trim()
+                      (v) => String(getNodeValue(v) || "").trim()
                     );
                     newSyncStatus[uniqueIdWithIndex] =
                       institutionValues.includes(userValue)
