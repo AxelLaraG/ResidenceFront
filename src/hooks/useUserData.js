@@ -63,8 +63,13 @@ export const useUserData = (user, selectedInstitution) => {
       const allInstitutions = Array.from(allInstitutionsSet).sort();
 
       const getNodeValue = (node) => {
-        if (typeof node === "object" && node !== null && node["#text"]) {
-          return node["#text"];
+        if (typeof node === "object" && node !== null) {
+          if (Array.isArray(node)) {
+            return node.map(getNodeValue).flat();
+          }
+          if (node["#text"]) {
+            return node["#text"];
+          }
         }
         return node;
       };
@@ -73,39 +78,33 @@ export const useUserData = (user, selectedInstitution) => {
         const parts = targetUniqueId.split("_").slice(1);
         let current = obj;
 
-        for (let i = 0; i < parts.length - 1; i++) {
-          const part = parts[i];
-          if (
-            current &&
-            typeof current === "object" &&
-            current[part] !== undefined
-          ) {
-            current = current[part];
+        for (const part of parts) {
+          if (current === undefined || current === null) return undefined;
+
+          const isAttribute = part.startsWith("@");
+          const attributeName = isAttribute ? part.substring(1) : null;
+
+          if (isAttribute) {
+            if (Array.isArray(current)) {
+              current = current
+                .map((item) => item["@attributes"]?.[attributeName])
+                .filter((v) => v !== undefined);
+              if (current.length === 0) current = undefined;
+            } else {
+              current = current["@attributes"]?.[attributeName];
+            }
           } else {
-            return undefined;
+            if (Array.isArray(current)) {
+              current = current
+                .map((item) => item[part])
+                .filter((v) => v !== undefined);
+              if (current.length === 0) current = undefined;
+            } else {
+              current = current[part];
+            }
           }
         }
-
-        const lastPart = parts[parts.length - 1];
-        if (Array.isArray(current)) {
-          return current
-            .map((item) => {
-              if (lastPart.startsWith("@")) {
-                const attributeName = lastPart.substring(1);
-                return item["@attributes"]?.[attributeName];
-              }
-              return item[lastPart];
-            })
-            .filter((v) => v !== undefined);
-        } else if (
-          current &&
-          typeof current === "object" &&
-          current[lastPart] !== undefined
-        ) {
-          return current[lastPart];
-        }
-
-        return undefined;
+        return getNodeValue(current);
       };
 
       const processNode = (node, path) => {
@@ -156,26 +155,25 @@ export const useUserData = (user, selectedInstitution) => {
                   targetUniqueId
                 );
 
-                if (institutionValueOrValues !== undefined) {
-                  const userValue = String(value || "").trim();
+                const userValue = String(value || "").trim();
 
-                  if (Array.isArray(institutionValueOrValues)) {
-                    const institutionValues = institutionValueOrValues.map(
-                      (v) => String(getNodeValue(v) || "").trim()
-                    );
-                    newSyncStatus[uniqueIdWithIndex] =
-                      institutionValues.includes(userValue)
-                        ? "synced"
-                        : "out_of_sync";
-                  } else {
-                    const institutionValue = String(
-                      getNodeValue(institutionValueOrValues) || ""
-                    ).trim();
-                    newSyncStatus[uniqueIdWithIndex] =
-                      userValue === institutionValue ? "synced" : "out_of_sync";
-                  }
+                if (institutionValueOrValues !== undefined) {
+                  const institutionValues = Array.isArray(
+                    institutionValueOrValues
+                  )
+                    ? institutionValueOrValues.map((v) =>
+                        String(v || "").trim()
+                      )
+                    : [String(institutionValueOrValues || "").trim()];
+
+                  newSyncStatus[uniqueIdWithIndex] = institutionValues.includes(
+                    userValue
+                  )
+                    ? "synced"
+                    : "out_of_sync";
                 } else {
-                  newSyncStatus[uniqueIdWithIndex] = "not_mapped";
+                  newSyncStatus[uniqueIdWithIndex] =
+                    userValue === "" ? "synced" : "out_of_sync";
                 }
               } else {
                 newSyncStatus[uniqueIdWithIndex] = "not_mapped";

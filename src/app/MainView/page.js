@@ -84,7 +84,9 @@ export default function MainView() {
     const institutions = new Set();
     Object.values(displayData).forEach((section) => {
       section.forEach((el) => {
-        el.allInstitutions.forEach((inst) => institutions.add(inst));
+        if (el.allInstitutions) {
+          el.allInstitutions.forEach((inst) => institutions.add(inst));
+        }
       });
     });
     return Array.from(institutions);
