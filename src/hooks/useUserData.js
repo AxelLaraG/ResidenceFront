@@ -218,7 +218,6 @@ export const useUserData = (user, selectedInstitution) => {
         return newData;
       });
     } catch (err) {
-      console.error("Error al actualizar los permisos:", err);
       setError("No se pudieron guardar los cambios. Inténtalo de nuevo.");
     }
   };
