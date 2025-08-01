@@ -43,8 +43,7 @@ export const useUserData = (user, selectedInstitution) => {
           attrkey: "@attributes",
         });
         const result = await parser.parseStringPromise(institutionXmlText);
-        const rootKey = Object.keys(result)[0];
-        institutionData = result[rootKey];
+        institutionData = result; 
       }
 
       const processedData = {};
@@ -75,7 +74,7 @@ export const useUserData = (user, selectedInstitution) => {
       };
 
       const findValueByUniqueId = (obj, targetUniqueId) => {
-        const parts = targetUniqueId.split("_").slice(1);
+        const parts = targetUniqueId.split("_"); 
         let current = obj;
 
         for (const part of parts) {
@@ -84,21 +83,20 @@ export const useUserData = (user, selectedInstitution) => {
           const isAttribute = part.startsWith("@");
           const attributeName = isAttribute ? part.substring(1) : null;
 
-          if (isAttribute) {
-            if (Array.isArray(current)) {
+          if (Array.isArray(current)) {
+            if (isAttribute) {
               current = current
                 .map((item) => item["@attributes"]?.[attributeName])
                 .filter((v) => v !== undefined);
-              if (current.length === 0) current = undefined;
             } else {
-              current = current["@attributes"]?.[attributeName];
-            }
-          } else {
-            if (Array.isArray(current)) {
               current = current
                 .map((item) => item[part])
                 .filter((v) => v !== undefined);
-              if (current.length === 0) current = undefined;
+            }
+            if (current.length === 0) current = undefined;
+          } else {
+            if (isAttribute) {
+              current = current["@attributes"]?.[attributeName];
             } else {
               current = current[part];
             }

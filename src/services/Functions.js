@@ -4,6 +4,9 @@ const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
     "Content-Type": "application/json",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
   },
   withCredentials: true,
 });
@@ -50,7 +53,8 @@ export const getCurrentUser = async (token) => {
 export const fetchUserXML = async (username) => {
   try {
     const res = await fetch(
-      `http://localhost:8080/SECIHTIServ/files/${username}.xml`
+      `http://localhost:8080/SECIHTIServ/files/${username}.xml`,
+      { cache: "no-store" }
     );
     if (!res.ok) throw new Error("No se pudo obtener el XML del usuario");
     const xmlText = await res.text();
@@ -150,13 +154,13 @@ export const updateXML = async (institution, data) => {
 export const updateFieldMapping = async (
   institution,
   sourceUniqueId,
-  targetUniqueId 
+  targetUniqueId
 ) => {
   try {
     const res = await apiClient.post("/api/update-mapping", {
       institution,
       sourceUniqueId,
-      targetUniqueId, 
+      targetUniqueId,
     });
     return res.data;
   } catch (error) {
@@ -185,7 +189,7 @@ export const fetchInstitutionXML = async (institution, username) => {
     if (!baseUrl) {
       throw new Error(`No se encontró URL para la institución: ${institution}`);
     }
-    const res = await fetch(`${baseUrl}${username}.xml`);
+    const res = await fetch(`${baseUrl}${username}.xml`, { cache: "no-store" });
     if (!res.ok) {
       if (res.status === 404) return null;
       throw new Error(`No se pudo obtener el XML para ${institution}`);
